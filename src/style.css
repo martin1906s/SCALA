@@ -36,7 +36,8 @@ body {
 #hud,
 #selection-panel,
 #move-panel,
-#ui-toolbar {
+#ui-toolbar,
+#dimension-panel {
   pointer-events: auto;
 }
 
@@ -692,8 +693,9 @@ body {
   right: 16px;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 12;
+  z-index: 25;
   max-width: 280px;
+  pointer-events: auto;
 }
 
 .dimension-panel--hidden {
@@ -732,6 +734,7 @@ body {
   background: rgba(255, 255, 255, 0.06);
   color: inherit;
   cursor: pointer;
+  pointer-events: auto;
 }
 
 .dimension-tier-btn.is-active {
@@ -750,6 +753,8 @@ body {
 .dimension-slider input[type="range"] {
   grid-column: 1 / -1;
   width: 100%;
+  cursor: pointer;
+  pointer-events: auto;
 }
 
 .dimension-cost {
@@ -784,6 +789,7 @@ body {
   background: rgba(255, 255, 255, 0.08);
   color: inherit;
   cursor: pointer;
+  pointer-events: auto;
 }
 
 .hud-cost--expensive {

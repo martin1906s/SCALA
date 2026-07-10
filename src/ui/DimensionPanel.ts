@@ -2,6 +2,7 @@ import type { Blueprint } from '@/config/blueprints';
 import { getUnlockedBlueprints } from '@/config/blueprints';
 import { TIER_LABELS, type MaterialTier } from '@/config/materialCatalog';
 import { DIMENSION_LIMITS } from '@/domain/materials/MaterialDimensions';
+import type { MaterialDimensions } from '@/domain/materials/MaterialDimensions';
 import { computePriceBreakdown } from '@/domain/materials/PricingEngine';
 import { BUILD_PIECE_TYPES, type PieceType } from '@/entities/BuildingPiece';
 import { useGameStore } from '@/store/gameStore';
@@ -19,7 +20,8 @@ export class DimensionPanel {
   private readonly warningEl: HTMLElement;
   private unsubscribe: (() => void) | null = null;
   private readonly onDimensionsChange?: () => void;
-  private lastRenderKey = '';
+  private builtTool: PieceType | null = null;
+  private builtBlueprintKey = '';
 
   constructor(root: HTMLElement, onDimensionsChange?: () => void) {
     this.root = root;
@@ -46,21 +48,21 @@ export class DimensionPanel {
     this.blueprintsEl = this.root.querySelector('[data-blueprint-list]')!;
     this.warningEl = this.root.querySelector('[data-warning]')!;
 
-    this.renderTierButtons();
+    this.bindTierButtons();
+    this.bindSliderDelegation();
     blockGamePointer(this.root);
+
     this.unsubscribe = useGameStore.subscribe((state, prevState) => {
-      const keys: Array<keyof typeof state> = [
-        'selectedTool',
-        'draftDimensions',
-        'draftMaterialTier',
-        'uiVisibility',
-        'completedLevel',
-        'gameMode',
-      ];
-      if (keys.every((key) => state[key] === prevState[key])) {
-        return;
+      const changed =
+        state.selectedTool !== prevState.selectedTool
+        || state.draftDimensions !== prevState.draftDimensions
+        || state.draftMaterialTier !== prevState.draftMaterialTier
+        || state.uiVisibility !== prevState.uiVisibility
+        || state.completedLevel !== prevState.completedLevel
+        || state.gameMode !== prevState.gameMode;
+      if (changed) {
+        this.render();
       }
-      this.render();
     });
     this.render();
   }
@@ -72,7 +74,7 @@ export class DimensionPanel {
     this.root.className = '';
   }
 
-  private renderTierButtons(): void {
+  private bindTierButtons(): void {
     this.tierEl.innerHTML = TIER_OPTIONS.map((tier) => `
       <button type="button" class="dimension-tier-btn" data-tier-btn="${tier}">
         ${TIER_LABELS[tier]}
@@ -80,11 +82,42 @@ export class DimensionPanel {
     `).join('');
 
     this.tierEl.querySelectorAll<HTMLButtonElement>('[data-tier-btn]').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (event) => {
+        event.stopPropagation();
         const tier = btn.dataset.tierBtn as MaterialTier;
         useGameStore.getState().setDraftMaterialTier(tier);
         this.onDimensionsChange?.();
       });
+    });
+  }
+
+  private bindSliderDelegation(): void {
+    this.slidersEl.addEventListener('input', (event) => {
+      const input = event.target as HTMLInputElement;
+      if (input.type !== 'range' || !input.dataset.dimKey) {
+        return;
+      }
+
+      event.stopPropagation();
+
+      const state = useGameStore.getState();
+      const tool = state.selectedTool;
+      if (!BUILD_PIECE_TYPES.includes(tool as PieceType)) {
+        return;
+      }
+
+      const type = tool as PieceType;
+      const key = input.dataset.dimKey;
+      const value = Number(input.value);
+      useGameStore.getState().setDraftDimension(type, key, value);
+
+      const valEl = this.slidersEl.querySelector(`[data-dim-val="${key}"]`);
+      if (valEl) {
+        valEl.textContent = `${value.toFixed(2)} m`;
+      }
+
+      this.updateCostDisplay(type, useGameStore.getState().getDraftForTool(type), state.draftMaterialTier);
+      this.onDimensionsChange?.();
     });
   }
 
@@ -100,31 +133,30 @@ export class DimensionPanel {
     );
 
     if (!isBuildTool) {
+      this.builtTool = null;
       return;
     }
 
     const type = tool as PieceType;
     const dims = state.draftDimensions[type];
 
-    const renderKey = JSON.stringify({
-      tool,
-      dims,
-      tier: state.draftMaterialTier,
-      visible: uiVisibility.dimensions,
-      completedLevel: state.completedLevel,
-      gameMode: state.gameMode,
-    });
-    if (renderKey === this.lastRenderKey) {
-      return;
+    if (this.builtTool !== type) {
+      this.buildSliders(type, dims);
+      this.builtTool = type;
+    } else {
+      this.syncSliderValues(dims);
     }
-    this.lastRenderKey = renderKey;
-
-    const limits = DIMENSION_LIMITS[type];
 
     this.tierEl.querySelectorAll<HTMLButtonElement>('[data-tier-btn]').forEach((btn) => {
       btn.classList.toggle('is-active', btn.dataset.tierBtn === state.draftMaterialTier);
     });
 
+    this.updateCostDisplay(type, dims, state.draftMaterialTier);
+    this.renderBlueprintsIfNeeded(state.completedLevel, state.gameMode);
+  }
+
+  private buildSliders(type: PieceType, dims: MaterialDimensions): void {
+    const limits = DIMENSION_LIMITS[type];
     this.slidersEl.innerHTML = Object.entries(limits).map(([key, limit]) => {
       const value = (dims as unknown as Record<string, number>)[key] ?? limit.min;
       return `
@@ -136,21 +168,31 @@ export class DimensionPanel {
         </label>
       `;
     }).join('');
+  }
 
+  private syncSliderValues(dims: MaterialDimensions): void {
     this.slidersEl.querySelectorAll<HTMLInputElement>('input[type="range"]').forEach((input) => {
-      input.addEventListener('input', () => {
-        const key = input.dataset.dimKey!;
-        const value = Number(input.value);
-        useGameStore.getState().setDraftDimension(type, key, value);
+      const key = input.dataset.dimKey;
+      if (!key) {
+        return;
+      }
+      const value = (dims as unknown as Record<string, number>)[key];
+      if (value !== undefined && Number(input.value) !== value) {
+        input.value = String(value);
         const valEl = this.slidersEl.querySelector(`[data-dim-val="${key}"]`);
         if (valEl) {
           valEl.textContent = `${value.toFixed(2)} m`;
         }
-        this.onDimensionsChange?.();
-      });
+      }
     });
+  }
 
-    const breakdown = computePriceBreakdown(type, dims, state.draftMaterialTier);
+  private updateCostDisplay(
+    type: PieceType,
+    dims: MaterialDimensions,
+    tier: MaterialTier,
+  ): void {
+    const breakdown = computePriceBreakdown(type, dims, tier);
     this.costEl.innerHTML = `
       <span>Área: <strong>${breakdown.areaCost}</strong></span>
       <span>Volumen: <strong>+${breakdown.volumeSurcharge}</strong></span>
@@ -161,15 +203,18 @@ export class DimensionPanel {
     if (totalEl) {
       animateCounter(totalEl as HTMLElement, breakdown.total);
     }
-
-    this.renderBlueprints();
   }
 
-  private renderBlueprints(): void {
-    const state = useGameStore.getState();
+  private renderBlueprintsIfNeeded(completedLevel: number, gameMode: string): void {
+    const key = `${completedLevel}|${gameMode}`;
+    if (key === this.builtBlueprintKey) {
+      return;
+    }
+    this.builtBlueprintKey = key;
+
     const blueprints = getUnlockedBlueprints(
-      state.completedLevel,
-      state.gameMode === 'sandbox',
+      completedLevel,
+      gameMode === 'sandbox',
     );
 
     this.blueprintsEl.innerHTML = blueprints.map((bp) => `
@@ -179,7 +224,8 @@ export class DimensionPanel {
     `).join('');
 
     this.blueprintsEl.querySelectorAll<HTMLButtonElement>('[data-bp]').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (event) => {
+        event.stopPropagation();
         const bp = blueprints.find((b) => b.id === btn.dataset.bp);
         if (bp) {
           this.applyBlueprint(bp);
@@ -193,6 +239,7 @@ export class DimensionPanel {
     store.setTool(bp.type);
     store.setDraftDimensions(bp.type, bp.dimensions);
     store.setDraftMaterialTier(bp.tier);
+    this.builtTool = null;
     this.onDimensionsChange?.();
   }
 
