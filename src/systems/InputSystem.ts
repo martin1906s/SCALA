@@ -5,6 +5,7 @@ import { useGameStore } from '@/store/gameStore';
 import type { BuildingSystem } from '@/systems/BuildingSystem';
 import type { GridSystem } from '@/systems/GridSystem';
 import type { MoveGizmoSystem } from '@/systems/MoveGizmoSystem';
+import type { MeasureSystem } from '@/systems/MeasureSystem';
 import { PiecePicker } from '@/systems/PiecePicker';
 import { GameplayToast } from '@/ui/GameplayToast';
 import { pointerCssCoords, pickGroundPlane } from '@/utils/pointerCoords';
@@ -32,6 +33,12 @@ interface PlacementTarget {
   gridY: number;
 }
 
+interface InputSystemConfig {
+  onStructuralWarning?: (message: string | null) => void;
+  measureSystem?: MeasureSystem;
+  onMeasureSound?: () => void;
+}
+
 export class InputSystem {
   private disposed = false;
   private readonly scene: Scene;
@@ -41,6 +48,9 @@ export class InputSystem {
   private readonly buildingSystem: BuildingSystem;
   private readonly moveGizmo: MoveGizmoSystem;
   private readonly piecePicker: PiecePicker;
+  private readonly onStructuralWarning?: (message: string | null) => void;
+  private readonly measureSystem: MeasureSystem | null;
+  private readonly onMeasureSound?: () => void;
   private lastPointerCoords: { x: number; y: number } | null = null;
   private measureStart: { x: number; z: number } | null = null;
 
@@ -51,6 +61,7 @@ export class InputSystem {
     gridSystem: GridSystem,
     buildingSystem: BuildingSystem,
     moveGizmo: MoveGizmoSystem,
+    config: InputSystemConfig = {},
   ) {
     this.scene = scene;
     this.canvas = canvas;
@@ -58,6 +69,9 @@ export class InputSystem {
     this.gridSystem = gridSystem;
     this.buildingSystem = buildingSystem;
     this.moveGizmo = moveGizmo;
+    this.onStructuralWarning = config.onStructuralWarning;
+    this.measureSystem = config.measureSystem ?? null;
+    this.onMeasureSound = config.onMeasureSound;
     this.piecePicker = new PiecePicker(scene, buildingSystem);
 
     this.canvas.addEventListener('pointerdown', this.onCanvasPointerDown);
@@ -291,6 +305,8 @@ export class InputSystem {
 
     if (!this.measureStart) {
       this.measureStart = { x: ground.x, z: ground.z };
+      this.measureSystem?.setPointA(ground.x, ground.z);
+      this.onMeasureSound?.();
       GameplayToast.show('Punto A marcado. Clic en B para medir.');
       return;
     }
@@ -299,6 +315,8 @@ export class InputSystem {
     const dz = ground.z - this.measureStart.z;
     const dist = Math.sqrt(dx * dx + dz * dz);
     const area = Math.abs(dx * dz);
+    this.measureSystem?.complete(ground.x, ground.z);
+    this.onMeasureSound?.();
     GameplayToast.show(`Distancia: ${dist.toFixed(2)} m · Área aprox: ${area.toFixed(2)} m²`);
     this.measureStart = null;
   }
@@ -306,6 +324,14 @@ export class InputSystem {
   private handlePointerMove(event: PointerEvent, pickInfo?: PickingInfo | null): void {
     const state = useGameStore.getState();
     const { selectedTool } = state;
+
+    if (state.measurementActive) {
+      const ground = this.getGroundPointUnderCursor(event);
+      if (ground && this.measureStart) {
+        this.measureSystem?.updateCursor(ground.x, ground.z);
+      }
+    }
+
     const hovered = this.pickBuildingPiece(event, pickInfo);
     this.updateHover(hovered?.id ?? null);
 
@@ -318,6 +344,7 @@ export class InputSystem {
         return;
       }
       this.buildingSystem.hidePreview();
+      this.onStructuralWarning?.(null);
       return;
     }
 
@@ -328,6 +355,7 @@ export class InputSystem {
     const target = this.pickPlacementTarget(event, pickInfo);
     if (!target) {
       this.buildingSystem.hidePreview();
+      this.onStructuralWarning?.(null);
       return;
     }
 
@@ -344,7 +372,7 @@ export class InputSystem {
       target.gz,
       target.gridY,
     );
-    void warning;
+    this.onStructuralWarning?.(warning);
   }
 
   private handlePointerLeave = (): void => {
@@ -400,6 +428,9 @@ export class InputSystem {
       const next = !store.measurementActive;
       store.setMeasurementActive(next);
       this.measureStart = null;
+      if (!next) {
+        this.measureSystem?.clear();
+      }
       GameplayToast.show(next ? 'Modo medición: clic A y B' : 'Modo medición desactivado');
       return;
     }

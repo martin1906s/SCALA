@@ -11,6 +11,7 @@ import { useGameStore } from '@/store/gameStore';
 import type { DialogueBox } from '@/ui/DialogueBox';
 import { Confetti } from '@/ui/Confetti';
 import { ObjectiveToast } from '@/ui/ObjectiveToast';
+import { persistLevelStars, persistMaxCompleted } from '@/utils/progressStorage';
 
 interface LevelManagerDeps {
   camera: CameraController;
@@ -18,6 +19,7 @@ interface LevelManagerDeps {
   grid: GridSystem;
   juice: JuiceSystem;
   gameMode: GameMode;
+  startLevelIndex?: number;
 }
 
 export class LevelManager {
@@ -39,7 +41,8 @@ export class LevelManager {
     this.grid = deps.grid;
     this.juice = deps.juice;
     this.gameMode = deps.gameMode;
-    this.level = LEVELS[0]!;
+    this.levelIndex = deps.startLevelIndex ?? 0;
+    this.level = LEVELS[this.levelIndex] ?? LEVELS[0]!;
   }
 
   async start(): Promise<void> {
@@ -73,6 +76,7 @@ export class LevelManager {
       tagline: this.level.tagline,
       done: 0,
       total: this.level.objectives.length,
+      objectives: this.computeProgress([]),
     });
 
     await this.dialogue.playLines('intro', this.level.name, this.level.intro, this.level.tagline);
@@ -122,20 +126,32 @@ export class LevelManager {
     const done = progress.filter((obj) => obj.done).length;
     const total = progress.length;
     const current = useGameStore.getState().mission;
+    const sameObjectives = current?.objectives.length === progress.length
+      && current.objectives.every((obj, i) => {
+        const next = progress[i];
+        return next
+          && obj.id === next.id
+          && obj.done === next.done
+          && obj.progressLabel === next.progressLabel;
+      });
+
     if (
       current &&
       current.done === done &&
       current.total === total &&
       current.title === this.level.name &&
-      current.tagline === this.level.tagline
+      current.tagline === this.level.tagline &&
+      sameObjectives
     ) {
       return;
     }
+
     useGameStore.getState().setMission({
       title: this.level.name,
       tagline: this.level.tagline,
       done,
       total,
+      objectives: progress,
     });
   }
 
@@ -163,6 +179,9 @@ export class LevelManager {
 
     useGameStore.getState().setCompletedLevel(this.level.id);
     const stars = computeStars(true, budget, this.level.budget);
+    persistMaxCompleted(this.level.id);
+    persistLevelStars(this.level.id, stars);
+    useGameStore.getState().setLevelStars(this.level.id, stars);
     Confetti.burst('epic');
     this.juice.onObjectiveComplete('victory');
 

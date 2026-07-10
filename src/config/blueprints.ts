@@ -58,5 +58,5 @@ export function getUnlockedBlueprints(completedLevel: number, sandbox = false): 
   if (sandbox) {
     return BLUEPRINTS;
   }
-  return BLUEPRINTS.filter((bp) => bp.unlockLevel <= completedLevel);
+  return BLUEPRINTS.filter((bp) => bp.unlockLevel <= completedLevel + 1);
 }

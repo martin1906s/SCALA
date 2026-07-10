@@ -57,6 +57,7 @@ export class BuildingSystem {
   private readonly history = new ActionHistory();
   private readonly historyListeners = new Set<() => void>();
   private footprintHighlights: Mesh[] = [];
+  private budgetEl: HTMLElement | null = null;
 
   constructor(
     scene: Scene,
@@ -87,6 +88,10 @@ export class BuildingSystem {
   onHistoryChange(listener: () => void): () => void {
     this.historyListeners.add(listener);
     return () => this.historyListeners.delete(listener);
+  }
+
+  setBudgetElement(el: HTMLElement): void {
+    this.budgetEl = el;
   }
 
   private notifyHistoryChange(): void {
@@ -863,7 +868,7 @@ export class BuildingSystem {
     this.highlightedMeshes.delete(piece.mesh);
 
     const refund = this.economySystem.refund(piece.costPaid);
-    this.juiceSystem?.onSell(refund);
+    this.juiceSystem?.onSell(refund, this.budgetEl ?? undefined);
 
     piece.customMaterial?.dispose();
     piece.mesh.dispose();

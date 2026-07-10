@@ -1,11 +1,22 @@
+import { LEVELS } from '@/config/levels';
 import { attachTooltip } from '@/ui/tooltip';
 import type { GameMode } from '@/store/gameStore';
+import {
+  getContinueLevelIndex,
+  isLevelUnlocked,
+  loadSave,
+} from '@/utils/progressStorage';
+
+export interface StartOptions {
+  mode: GameMode;
+  levelIndex?: number;
+}
 
 export class HomeScreen {
   private readonly root: HTMLElement;
-  private readonly onStart: (mode: GameMode) => void;
+  private readonly onStart: (options: StartOptions) => void;
 
-  constructor(root: HTMLElement, onStart: (mode: GameMode) => void) {
+  constructor(root: HTMLElement, onStart: (options: StartOptions) => void) {
     this.root = root;
     this.onStart = onStart;
     this.render();
@@ -19,6 +30,13 @@ export class HomeScreen {
   }
 
   private render(): void {
+    const save = loadSave();
+    const continueIndex = getContinueLevelIndex(LEVELS.length);
+    const allComplete = save.maxCompletedLevel >= LEVELS.length;
+    const continueLabel = allComplete
+      ? 'Rejugar campaña'
+      : `Continuar · ${LEVELS[continueIndex]?.name ?? 'Nivel 1'}`;
+
     this.root.className = 'home';
     this.root.innerHTML = `
       <div class="home-sky"></div>
@@ -42,9 +60,11 @@ export class HomeScreen {
           <li><span class="chip chip--pillar"></span> Columnas y tiers</li>
         </ul>
 
+        <div class="home-levels" data-levels></div>
+
         <div class="home-actions">
-          <button type="button" class="home-play" data-play-campaign>
-            ¡A construir!
+          <button type="button" class="home-play" data-play-continue>
+            ${continueLabel}
           </button>
           <button type="button" class="home-play home-play--sandbox" data-play-sandbox>
             Modo libre
@@ -59,16 +79,61 @@ export class HomeScreen {
       </div>
     `;
 
-    const campaignBtn = this.root.querySelector<HTMLButtonElement>('[data-play-campaign]');
+    this.renderLevels(save.stars);
+
+    const continueBtn = this.root.querySelector<HTMLButtonElement>('[data-play-continue]');
     const sandboxBtn = this.root.querySelector<HTMLButtonElement>('[data-play-sandbox]');
 
-    if (campaignBtn) {
-      attachTooltip(campaignBtn, 'Campaña con retos y presupuesto', 'top');
-      campaignBtn.addEventListener('click', () => this.onStart('campaign'));
+    if (continueBtn) {
+      attachTooltip(
+        continueBtn,
+        allComplete ? 'Vuelve a la primera prueba del gremio' : 'Retoma tu aventura',
+        'top',
+      );
+      continueBtn.addEventListener('click', () => {
+        this.onStart({ mode: 'campaign', levelIndex: continueIndex });
+      });
     }
     if (sandboxBtn) {
       attachTooltip(sandboxBtn, 'Construye sin límites ni objetivos', 'top');
-      sandboxBtn.addEventListener('click', () => this.onStart('sandbox'));
+      sandboxBtn.addEventListener('click', () => this.onStart({ mode: 'sandbox' }));
     }
+  }
+
+  private renderLevels(stars: Record<number, number>): void {
+    const container = this.root.querySelector('[data-levels]');
+    if (!container) {
+      return;
+    }
+
+    container.innerHTML = LEVELS.map((level, index) => {
+      const unlocked = isLevelUnlocked(level.id);
+      const earned = stars[level.id] ?? 0;
+      const starText = earned > 0 ? '★'.repeat(earned) + '☆'.repeat(3 - earned) : '☆☆☆';
+      return `
+        <button
+          type="button"
+          class="home-level-card ${unlocked ? '' : 'home-level-card--locked'}"
+          data-level-index="${index}"
+          ${unlocked ? '' : 'disabled'}
+        >
+          <span class="home-level-card__num">${level.id}</span>
+          <span class="home-level-card__name">${level.name}</span>
+          <span class="home-level-card__stars" aria-label="${earned} de 3 estrellas">${starText}</span>
+        </button>
+      `;
+    }).join('');
+
+    container.querySelectorAll<HTMLButtonElement>('[data-level-index]').forEach((button) => {
+      const index = Number(button.dataset.levelIndex);
+      const level = LEVELS[index];
+      if (!level) {
+        return;
+      }
+      attachTooltip(button, level.tagline, 'top');
+      button.addEventListener('click', () => {
+        this.onStart({ mode: 'campaign', levelIndex: index });
+      });
+    });
   }
 }

@@ -3,7 +3,8 @@ import './home.css';
 import './ui/dialogue.css';
 import { Game } from '@/core/Game';
 import { HomeScreen } from '@/ui/HomeScreen';
-import type { GameMode } from '@/store/gameStore';
+import { loadSave } from '@/utils/progressStorage';
+import { useGameStore } from '@/store/gameStore';
 
 const canvas = document.getElementById('renderCanvas') as HTMLCanvasElement | null;
 const hudRoot = document.getElementById('hud');
@@ -21,9 +22,15 @@ if (
   throw new Error('Missing render canvas or UI containers.');
 }
 
+const save = loadSave();
+useGameStore.getState().setCompletedLevel(save.maxCompletedLevel);
+for (const [levelId, stars] of Object.entries(save.stars)) {
+  useGameStore.getState().setLevelStars(Number(levelId), stars);
+}
+
 let game: Game | null = null;
 
-const home = new HomeScreen(homeRoot, (mode: GameMode) => {
+const home = new HomeScreen(homeRoot, ({ mode, levelIndex = 0 }) => {
   home.hide();
   document.body.classList.add('is-playing');
 
@@ -36,6 +43,7 @@ const home = new HomeScreen(homeRoot, (mode: GameMode) => {
     toolbarRoot,
     dialogueRoot,
     mode,
+    levelIndex,
   );
   game.start();
 });

@@ -135,6 +135,59 @@ body {
   background: linear-gradient(90deg, #66bb6a, #ffd54f);
 }
 
+.hud-mission__objectives {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.hud-objective {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  gap: 6px;
+  align-items: center;
+  font-size: 0.68rem;
+  color: rgba(220, 235, 255, 0.88);
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  transition: background 0.25s, color 0.25s;
+}
+
+.hud-objective--done {
+  color: rgba(160, 240, 190, 0.95);
+  background: rgba(60, 160, 100, 0.15);
+}
+
+.hud-objective__icon {
+  font-weight: 800;
+  color: rgba(140, 200, 255, 0.7);
+}
+
+.hud-objective--done .hud-objective__icon {
+  color: #7dffb0;
+}
+
+.hud-objective__progress {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: rgba(255, 217, 102, 0.9);
+  white-space: nowrap;
+}
+
+.hud--measuring .hud-panel {
+  border-color: rgba(255, 210, 80, 0.45);
+  box-shadow: 0 0 0 1px rgba(255, 210, 80, 0.2), 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.hud--measuring [data-hud-hint] {
+  color: #ffd966;
+  font-weight: 700;
+}
+
 .hud-budget.is-pulsing {
   animation: hud-budget-pulse 0.45s ease;
 }

@@ -191,6 +191,67 @@
   padding: 12px 36px;
 }
 
+.home-levels {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+  max-width: 340px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.home-level-card {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  font-family: inherit;
+  text-align: left;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.home-level-card:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.home-level-card--locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+}
+
+.home-level-card__num {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #e85d4c;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.home-level-card__name {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #2d4a35;
+}
+
+.home-level-card__stars {
+  font-size: 0.78rem;
+  letter-spacing: 1px;
+  color: #c9a227;
+}
+
 .home-play:active {
   transform: translateY(3px);
   border-bottom-width: 2px;

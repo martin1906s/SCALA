@@ -43,6 +43,8 @@ export class HUD {
   private readonly missionTaglineEl: HTMLElement;
   private readonly missionBarEl: HTMLElement;
   private readonly missionCountEl: HTMLElement;
+  private readonly missionObjectivesEl: HTMLElement;
+  private readonly hintEl: HTMLElement;
   private readonly undoBtn: HTMLButtonElement;
   private readonly redoBtn: HTMLButtonElement;
   private readonly toolButtons: Map<ToolMode, HTMLButtonElement>;
@@ -67,6 +69,7 @@ export class HUD {
         <div class="hud-mission__bar" aria-hidden="true">
           <span class="hud-mission__fill" data-mission-bar></span>
         </div>
+        <ul class="hud-mission__objectives" data-mission-objectives hidden></ul>
       </div>
       <div class="hud-panel" data-panel>
         <div class="hud-row">
@@ -86,7 +89,7 @@ export class HUD {
           <button type="button" class="hud-history-btn" data-redo>↷ Rehacer</button>
         </div>
         <div class="hud-toolbar" data-toolbar></div>
-        <p class="hud-hint">M = medir · 6/7 techo/rampa · Ctrl+Z historial</p>
+        <p class="hud-hint" data-hud-hint>M = medir · 6/7 techo/rampa · Ctrl+Z historial</p>
       </div>
     `;
 
@@ -95,6 +98,8 @@ export class HUD {
     this.missionTaglineEl = this.root.querySelector('[data-mission-tagline]')!;
     this.missionBarEl = this.root.querySelector('[data-mission-bar]')!;
     this.missionCountEl = this.root.querySelector('[data-mission-count]')!;
+    this.missionObjectivesEl = this.root.querySelector('[data-mission-objectives]')!;
+    this.hintEl = this.root.querySelector('[data-hud-hint]')!;
     this.panelEl = this.root.querySelector('[data-panel]')!;
     this.budgetEl = this.root.querySelector('[data-budget]')!;
     this.toolEl = this.root.querySelector('[data-tool]')!;
@@ -175,14 +180,33 @@ export class HUD {
       this.missionBarEl.style.width = `${ratio}%`;
       this.missionEl.classList.toggle('is-complete', state.mission.done === state.mission.total);
 
+      if (state.mission.objectives.length > 0) {
+        this.missionObjectivesEl.hidden = false;
+        this.missionObjectivesEl.innerHTML = state.mission.objectives.map((obj) => `
+          <li class="hud-objective ${obj.done ? 'hud-objective--done' : ''}">
+            <span class="hud-objective__icon">${obj.done ? '✓' : '○'}</span>
+            <span class="hud-objective__text">${obj.text}</span>
+            <span class="hud-objective__progress">${obj.progressLabel}</span>
+          </li>
+        `).join('');
+      } else {
+        this.missionObjectivesEl.hidden = true;
+      }
+
       if (state.mission.done !== this.lastMissionDone) {
         pulseElement(this.missionEl, 'is-mission-pulse');
         this.lastMissionDone = state.mission.done;
       }
     } else {
       this.missionEl.hidden = true;
+      this.missionObjectivesEl.hidden = true;
       this.lastMissionDone = -1;
     }
+
+    this.root.classList.toggle('hud--measuring', state.measurementActive);
+    this.hintEl.textContent = state.measurementActive
+      ? '📏 Medición activa: clic A → clic B · M para salir'
+      : 'M = medir · 6/7 techo/rampa · Ctrl+Z historial';
 
     for (const [tool, button] of this.toolButtons) {
       button.classList.toggle('is-active', tool === state.selectedTool);

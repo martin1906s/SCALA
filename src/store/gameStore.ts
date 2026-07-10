@@ -21,11 +21,19 @@ export const ROTATION_STEP = Math.PI / 12;
 export type UiPanel = 'tools' | 'rotation' | 'dimensions';
 export type GameMode = 'campaign' | 'sandbox';
 
+export interface MissionObjectiveState {
+  id: string;
+  text: string;
+  progressLabel: string;
+  done: boolean;
+}
+
 interface MissionState {
   title: string;
   tagline: string;
   done: number;
   total: number;
+  objectives: MissionObjectiveState[];
 }
 
 interface UiVisibility {
@@ -46,6 +54,8 @@ interface GameState {
   budget: number;
   gameMode: GameMode;
   completedLevel: number;
+  levelStars: Record<number, number>;
+  placementStreak: number;
   selectedTool: ToolMode;
   pieces: BuildingPiece[];
   previewRotation: PieceRotation;
@@ -63,6 +73,9 @@ interface GameState {
   measurementActive: boolean;
   setGameMode: (mode: GameMode) => void;
   setCompletedLevel: (level: number) => void;
+  setLevelStars: (levelId: number, stars: number) => void;
+  bumpPlacementStreak: () => number;
+  resetPlacementStreak: () => void;
   setTool: (tool: ToolMode) => void;
   addPiece: (piece: BuildingPiece) => void;
   removePiece: (id: string) => void;
@@ -116,7 +129,9 @@ function estimateForTool(
 export const useGameStore = createStore<GameState>((set, get) => ({
   budget: START_BUDGET,
   gameMode: 'campaign',
-  completedLevel: 1,
+  completedLevel: 0,
+  levelStars: {},
+  placementStreak: 0,
   selectedTool: 'wall',
   pieces: [],
   previewRotation: cloneRotation(ZERO_ROTATION),
@@ -136,6 +151,25 @@ export const useGameStore = createStore<GameState>((set, get) => ({
   setGameMode: (mode) => set({ gameMode: mode }),
 
   setCompletedLevel: (level) => set({ completedLevel: level }),
+
+  setLevelStars: (levelId, stars) =>
+    set((state) => {
+      const prev = state.levelStars[levelId] ?? 0;
+      if (stars <= prev) {
+        return state;
+      }
+      return {
+        levelStars: { ...state.levelStars, [levelId]: stars },
+      };
+    }),
+
+  bumpPlacementStreak: () => {
+    const next = get().placementStreak + 1;
+    set({ placementStreak: next });
+    return next;
+  },
+
+  resetPlacementStreak: () => set({ placementStreak: 0 }),
 
   setTool: (tool) =>
     set((state) => ({
@@ -247,7 +281,8 @@ export const useGameStore = createStore<GameState>((set, get) => ({
         current.title === mission.title &&
         current.tagline === mission.tagline &&
         current.done === mission.done &&
-        current.total === mission.total
+        current.total === mission.total &&
+        current.objectives === mission.objectives
       ) {
         return state;
       }
