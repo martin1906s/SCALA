@@ -1,12 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&display=swap');
-
-/* ── Diálogo estilo RPG (caja blanca, borde negro, sombra sólida) ── */
+/* ── Diálogo · documento del gremio (papel crema, tinta navy) ── */
 .game-dialogue {
   position: fixed;
   inset: 0;
   z-index: 50;
   pointer-events: none;
-  font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--font-ui);
 }
 
 /* Solo el backdrop en modo overlay captura clics fuera del marco */
@@ -14,8 +12,8 @@
 .game-dialogue__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(110, 181, 224, 0.35);
-  backdrop-filter: blur(2px);
+  background: rgba(10, 18, 30, 0.55);
+  backdrop-filter: blur(4px);
   animation: dialogue-fade-in 0.35s ease;
 }
 
@@ -25,11 +23,9 @@
   bottom: 28px;
   transform: translateX(-50%);
   width: min(720px, calc(100vw - 40px));
-  background: #ffffff;
-  border: 4px solid #111111;
-  box-shadow:
-    8px 8px 0 #111111,
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  background: var(--scala-paper);
+  border: 2px solid var(--scala-navy);
+  box-shadow: 6px 6px 0 var(--scala-navy);
   padding: 18px 22px 24px;
   cursor: default;
   user-select: none;
@@ -56,18 +52,17 @@
   width: 28px;
   height: 28px;
   padding: 0;
-  border: 2px solid #111111;
+  border: 2px solid var(--scala-navy);
   border-radius: 6px;
-  background: #f5f5f5;
-  color: #333333;
+  background: var(--scala-cream);
+  color: var(--scala-navy);
   cursor: pointer;
-  box-shadow: 2px 2px 0 #111111;
-  transition: transform 0.12s ease, background 0.12s ease;
+  box-shadow: 2px 2px 0 var(--scala-navy);
+  transition: transform var(--scala-duration) ease, background var(--scala-duration) ease;
 }
 
 .game-dialogue__minimize:hover {
-  background: #ffe8a3;
-  transform: translateY(-1px);
+  background: var(--scala-brass-bright);
 }
 
 .game-dialogue__minimize:active {
@@ -94,39 +89,41 @@
 }
 
 .game-dialogue__label {
-  font-size: 0.68rem;
+  font-family: var(--font-display);
+  font-size: 0.62rem;
   font-weight: 800;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #3d8fd1;
+  color: var(--scala-brass);
   margin-bottom: 2px;
 }
 
 .game-dialogue__tagline {
   font-size: 0.78rem;
-  font-weight: 700;
-  color: #6a8fb0;
+  font-weight: 600;
+  color: var(--scala-slate);
   margin-bottom: 4px;
   letter-spacing: 0.04em;
 }
 
 .game-dialogue--victory .game-dialogue__tagline {
-  color: #3d9a62;
+  color: var(--scala-success);
 }
 
 .game-dialogue__title {
-  font-size: 1.05rem;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
   font-weight: 800;
-  color: #1a1a1a;
+  color: var(--scala-navy);
   margin-bottom: 10px;
   line-height: 1.2;
 }
 
 .game-dialogue__text {
-  font-size: 1.12rem;
-  font-weight: 600;
+  font-size: 1.05rem;
+  font-weight: 500;
   line-height: 1.6;
-  color: #222222;
+  color: var(--scala-navy-mid);
   min-height: 2.8em;
   padding-right: 28px;
   -webkit-font-smoothing: antialiased;

@@ -30,9 +30,18 @@ export class DimensionPanel {
 
     this.root.innerHTML = `
       <div class="dimension-panel-inner">
-        <h3 class="dimension-title">Taller de materiales</h3>
-        <div class="dimension-tier" data-tier></div>
-        <div class="dimension-sliders" data-sliders></div>
+        <header class="dimension-header">
+          <span class="dimension-header__eyebrow">Taller del gremio</span>
+          <h3 class="dimension-title">Materiales</h3>
+        </header>
+        <section class="dimension-section">
+          <span class="dimension-section__label">Calidad</span>
+          <div class="dimension-tier" data-tier></div>
+        </section>
+        <section class="dimension-section">
+          <span class="dimension-section__label">Dimensiones</span>
+          <div class="dimension-sliders" data-sliders></div>
+        </section>
         <div class="dimension-cost" data-cost></div>
         <p class="dimension-warning" data-warning hidden></p>
         <div class="dimension-blueprints" data-blueprints>
@@ -194,9 +203,18 @@ export class DimensionPanel {
   ): void {
     const breakdown = computePriceBreakdown(type, dims, tier);
     this.costEl.innerHTML = `
-      <span>Área: <strong>${breakdown.areaCost}</strong></span>
-      <span>Volumen: <strong>+${breakdown.volumeSurcharge}</strong></span>
-      <span>Total: <strong data-cost-total>${breakdown.total}</strong> monedas</span>
+      <div class="dimension-cost__item">
+        <span>Área</span>
+        <strong>${breakdown.areaCost}</strong>
+      </div>
+      <div class="dimension-cost__item">
+        <span>Volumen</span>
+        <strong>+${breakdown.volumeSurcharge}</strong>
+      </div>
+      <div class="dimension-cost__item dimension-cost__item--total">
+        <span>Total estimado</span>
+        <strong><span data-cost-total>${breakdown.total}</span> monedas</strong>
+      </div>
     `;
 
     const totalEl = this.costEl.querySelector('[data-cost-total]');

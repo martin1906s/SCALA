@@ -31,7 +31,12 @@ export class UiToolbar {
 
   constructor(root: HTMLElement) {
     this.root = root;
-    this.root.className = 'ui-toolbar';
+    this.root.className = 'ui-toolbar-shell';
+    this.root.innerHTML = `
+      <span class="ui-toolbar-label">Paneles</span>
+      <div class="ui-toolbar" data-toolbar></div>
+    `;
+    const toolbar = this.root.querySelector('[data-toolbar]') as HTMLElement;
 
     PANELS.forEach(({ id, tooltip, icon }) => {
       const button = document.createElement('button');
@@ -46,7 +51,7 @@ export class UiToolbar {
         useGameStore.getState().toggleUiPanel(id);
       });
 
-      this.root.appendChild(button);
+      toolbar.appendChild(button);
       this.buttons.set(id, button);
     });
 

@@ -13,8 +13,8 @@
     calc(var(--safe-right) + 20px)
     calc(var(--safe-bottom) + 20px)
     calc(var(--safe-left) + 20px);
-  background: linear-gradient(160deg, #1a2a3a 0%, #0f1824 55%, #1a1a2e 100%);
-  color: #f5f9ff;
+  background: linear-gradient(160deg, var(--scala-navy) 0%, var(--scala-ink) 55%, #0d1824 100%);
+  color: var(--scala-cream);
   text-align: center;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 }
@@ -182,11 +182,17 @@ body.is-playing:not(.needs-landscape) #renderCanvas {
     max-width: none;
     padding: 8px 10px;
     z-index: 3;
-    border-radius: 14px;
-    background: rgba(6, 10, 18, 0.92);
+    border-radius: var(--scala-radius-md);
+    background: var(--scala-glass-elevated);
+    backdrop-filter: var(--scala-panel-blur);
+    border: 1px solid var(--scala-glass-border);
     display: flex;
     flex-direction: column;
     gap: 8px;
+  }
+
+  .hud-panel__eyebrow {
+    display: none;
   }
 
   .hud-stats {
@@ -361,9 +367,13 @@ body.is-playing:not(.needs-landscape) #renderCanvas {
     right: calc(var(--rail-w) + var(--safe-right) + 6px);
   }
 
-  .ui-toolbar {
+  #ui-toolbar .ui-toolbar {
     padding: 4px;
     gap: 4px;
+  }
+
+  #ui-toolbar .ui-toolbar-label {
+    display: none;
   }
 
   .ui-toolbar-btn {

@@ -33,50 +33,57 @@ export class HomeScreen {
     const save = loadSave();
     const continueIndex = getContinueLevelIndex(LEVELS.length);
     const allComplete = save.maxCompletedLevel >= LEVELS.length;
+    const continueLevel = LEVELS[continueIndex];
     const continueLabel = allComplete
       ? 'Rejugar campaña'
-      : `Continuar · ${LEVELS[continueIndex]?.name ?? 'Nivel 1'}`;
+      : `Continuar · ${continueLevel?.name ?? 'Nivel 1'}`;
 
     this.root.className = 'home';
     this.root.innerHTML = `
-      <div class="home-sky"></div>
-      <div class="home-grass"></div>
-
-      <div class="home-content">
-        <div class="home-house" aria-hidden="true">
-          <div class="block block--roof"></div>
-          <div class="block block--wall block--w1"></div>
-          <div class="block block--wall block--w2"></div>
-          <div class="block block--pillar"></div>
-          <div class="block block--floor"></div>
-        </div>
-
-        <h1 class="home-title">SCALA</h1>
-        <p class="home-tagline">Arma tu casita con dimensiones a medida</p>
-        <p class="home-orient-hint">En móvil, gira a horizontal para jugar</p>
-
-        <ul class="home-tips">
-          <li><span class="chip chip--wall"></span> Muros dimensionables</li>
-          <li><span class="chip chip--floor"></span> Suelos por área</li>
-          <li><span class="chip chip--pillar"></span> Columnas y tiers</li>
-        </ul>
-
-        <div class="home-levels" data-levels></div>
-
-        <div class="home-actions">
-          <button type="button" class="home-play" data-play-continue>
-            ${continueLabel}
-          </button>
-          <button type="button" class="home-play home-play--sandbox" data-play-sandbox>
-            Modo libre
-          </button>
-        </div>
+      <div class="home-bg" aria-hidden="true">
+        <div class="home-bg__grid"></div>
+        <div class="home-bg__glow"></div>
       </div>
 
       <div class="home-deco" aria-hidden="true">
-        <span class="float-block fb1"></span>
-        <span class="float-block fb2"></span>
-        <span class="float-block fb3"></span>
+        <span class="home-deco__corner home-deco__corner--tl"></span>
+        <span class="home-deco__corner home-deco__corner--br"></span>
+      </div>
+
+      <div class="home-shell">
+        <header class="home-header">
+          <div class="home-emblem" aria-hidden="true">
+            <span class="home-emblem__roof"></span>
+            <span class="home-emblem__wall home-emblem__wall--l"></span>
+            <span class="home-emblem__wall home-emblem__wall--r"></span>
+            <span class="home-emblem__pillar"></span>
+            <span class="home-emblem__base"></span>
+          </div>
+          <p class="home-eyebrow">Gremio de constructores</p>
+          <h1 class="home-title">SCALA</h1>
+          <p class="home-tagline">Arma estructuras con dimensiones a medida y cumple los retos del gremio</p>
+          <p class="home-orient-hint">En móvil, gira a horizontal para jugar</p>
+        </header>
+
+        <ul class="home-features">
+          <li><span class="home-chip home-chip--wall"></span> Muros</li>
+          <li><span class="home-chip home-chip--floor"></span> Suelos</li>
+          <li><span class="home-chip home-chip--pillar"></span> Columnas</li>
+        </ul>
+
+        <section class="home-levels" aria-labelledby="home-levels-label">
+          <p class="home-levels__label" id="home-levels-label">Pruebas del gremio</p>
+          <div data-levels></div>
+        </section>
+
+        <div class="home-actions">
+          <button type="button" class="home-btn home-btn--primary" data-play-continue>
+            ${continueLabel}
+          </button>
+          <button type="button" class="home-btn home-btn--ghost" data-play-sandbox>
+            Modo libre · sin límites
+          </button>
+        </div>
       </div>
     `;
 
@@ -119,7 +126,10 @@ export class HomeScreen {
           ${unlocked ? '' : 'disabled'}
         >
           <span class="home-level-card__num">${level.id}</span>
-          <span class="home-level-card__name">${level.name}</span>
+          <span>
+            <span class="home-level-card__name">${level.name}</span>
+            <span class="home-level-card__meta">${level.tagline}</span>
+          </span>
           <span class="home-level-card__stars" aria-label="${earned} de 3 estrellas">${starText}</span>
         </button>
       `;

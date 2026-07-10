@@ -36,8 +36,9 @@ html,
 body {
   width: 100%;
   overflow: hidden;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  background: #1a1a2e;
+  font-family: var(--font-ui);
+  background: var(--scala-ink);
+  color: var(--scala-fog);
 }
 
 body {
@@ -97,17 +98,18 @@ body {
   min-width: 240px;
   max-width: 280px;
   padding: 12px 14px;
-  border-radius: 12px;
-  background: linear-gradient(145deg, rgba(20, 36, 58, 0.88), rgba(10, 20, 36, 0.92));
-  border: 1px solid rgba(120, 190, 255, 0.28);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  color: #f5f9ff;
+  border-radius: var(--scala-radius-md);
+  background: var(--scala-glass-elevated);
+  backdrop-filter: var(--scala-panel-blur);
+  border: 1px solid var(--scala-glass-border-strong);
+  box-shadow: var(--scala-panel-shadow);
+  color: var(--scala-fog);
   transition: border-color 0.3s, box-shadow 0.3s;
 }
 
 .hud-mission.is-complete {
-  border-color: rgba(120, 230, 160, 0.55);
-  box-shadow: 0 8px 28px rgba(40, 120, 70, 0.25);
+  border-color: rgba(76, 175, 122, 0.55);
+  box-shadow: 0 8px 28px rgba(40, 120, 70, 0.28);
 }
 
 .hud-mission.is-mission-pulse {
@@ -148,17 +150,17 @@ body {
 }
 
 .hud-mission__label {
-  font-size: 0.65rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(140, 200, 255, 0.85);
+  color: var(--scala-brass-bright);
 }
 
 .hud-mission__count {
   font-size: 0.72rem;
   font-weight: 800;
-  color: #ffd966;
+  color: var(--scala-brass-bright);
 }
 
 .hud-mission__title {
@@ -187,12 +189,12 @@ body {
   height: 100%;
   width: 0%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #42a5f5, #66bb6a);
+  background: linear-gradient(90deg, var(--scala-sky), var(--scala-success));
   transition: width 0.45s cubic-bezier(0.34, 1.2, 0.64, 1);
 }
 
 .hud-mission.is-complete .hud-mission__fill {
-  background: linear-gradient(90deg, #66bb6a, #ffd54f);
+  background: linear-gradient(90deg, var(--scala-success), var(--scala-brass-bright));
 }
 
 .hud-mission__objectives {
@@ -266,12 +268,12 @@ body {
   pointer-events: auto;
   min-width: 220px;
   padding: 14px 16px;
-  border-radius: 12px;
-  background: rgba(8, 14, 24, 0.82);
-  backdrop-filter: blur(10px);
-  color: #f5f5f5;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  border-radius: var(--scala-radius-md);
+  background: var(--scala-glass);
+  backdrop-filter: var(--scala-panel-blur);
+  color: var(--scala-fog);
+  border: 1px solid var(--scala-glass-border);
+  box-shadow: var(--scala-panel-shadow);
 }
 
 .hud-stats {
@@ -312,7 +314,7 @@ body {
 .hud-budget {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #ffd966;
+  color: var(--scala-brass-bright);
 }
 
 .hud-tool {
@@ -337,13 +339,24 @@ body {
   justify-content: center;
   gap: 4px;
   padding: 8px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  border: 1px solid var(--scala-glass-border);
+  border-radius: var(--scala-radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--scala-fog);
+  font-family: var(--font-ui);
   font-size: 0.78rem;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background var(--scala-duration), border-color var(--scala-duration);
+}
+
+.hud-btn:hover {
+  background: rgba(196, 160, 74, 0.12);
+  border-color: var(--scala-glass-border-strong);
+}
+
+.hud-btn.is-active {
+  background: rgba(90, 158, 196, 0.28);
+  border-color: rgba(90, 158, 196, 0.65);
 }
 
 .hud-btn__short {
@@ -378,18 +391,19 @@ body {
   justify-content: center;
   gap: 4px;
   padding: 7px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  border: 1px solid var(--scala-glass-border);
+  border-radius: var(--scala-radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--scala-fog);
+  font-family: var(--font-ui);
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, opacity 0.15s;
+  transition: background var(--scala-duration), opacity var(--scala-duration);
 }
 
 .hud-history-btn:hover:not(.is-disabled) {
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(196, 160, 74, 0.12);
 }
 
 .hud-history-btn.is-disabled {
@@ -400,15 +414,6 @@ body {
 .hud-history-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-.hud-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
-}
-
-.hud-btn.is-active {
-  background: rgba(100, 180, 255, 0.35);
-  border-color: rgba(140, 200, 255, 0.7);
 }
 
 .hud-hint {
@@ -425,12 +430,12 @@ body {
 }
 
 .hud-btn[data-tool="select"].is-active {
-  background: rgba(120, 220, 160, 0.35);
-  border-color: rgba(140, 240, 180, 0.7);
+  background: rgba(76, 175, 122, 0.28);
+  border-color: rgba(76, 175, 122, 0.6);
 }
 
 .hud--select-active .hud-panel {
-  box-shadow: 0 0 0 2px rgba(120, 220, 160, 0.5);
+  box-shadow: 0 0 0 2px var(--scala-success-glow);
 }
 
 /* ── Selection panel (bottom center) ── */
@@ -463,17 +468,18 @@ body {
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  border-radius: 16px;
-  background: rgba(0, 0, 0, 0.58);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  opacity: 0.7;
-  transition: opacity 0.2s, box-shadow 0.2s;
+  border-radius: var(--scala-radius-lg);
+  background: var(--scala-glass);
+  backdrop-filter: var(--scala-panel-blur);
+  border: 1px solid var(--scala-glass-border);
+  opacity: 0.75;
+  transition: opacity var(--scala-duration), box-shadow var(--scala-duration);
 }
 
 .selection-strip--active {
   opacity: 1;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  border-color: var(--scala-glass-border-strong);
+  box-shadow: var(--scala-panel-shadow);
 }
 
 .selection-material {
@@ -575,12 +581,13 @@ body {
 
 .move-panel-inner {
   padding: 10px 12px;
-  border-radius: 14px;
-  background: rgba(0, 0, 0, 0.58);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  color: #fff;
+  border-radius: var(--scala-radius-md);
+  background: var(--scala-glass);
+  backdrop-filter: var(--scala-panel-blur);
+  border: 1px solid var(--scala-glass-border);
+  color: var(--scala-fog);
   text-align: center;
+  box-shadow: var(--scala-panel-shadow);
 }
 
 .move-panel-label {
@@ -647,24 +654,25 @@ body {
   display: flex;
   gap: 6px;
   padding: 6px;
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--scala-radius-md);
+  background: var(--scala-glass);
+  backdrop-filter: var(--scala-panel-blur);
+  border: 1px solid var(--scala-glass-border);
+  box-shadow: var(--scala-panel-shadow);
 }
 
 .ui-toolbar-btn {
   width: 40px;
   height: 40px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  border: 1px solid var(--scala-glass-border);
+  border-radius: var(--scala-radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--scala-fog);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s, opacity 0.15s;
+  transition: background var(--scala-duration), opacity var(--scala-duration);
 }
 
 .ui-toolbar-btn svg {
@@ -673,7 +681,8 @@ body {
 }
 
 .ui-toolbar-btn:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(196, 160, 74, 0.14);
+  border-color: var(--scala-glass-border-strong);
 }
 
 .ui-toolbar-btn.is-off {
@@ -798,11 +807,12 @@ body {
   gap: 10px;
   padding: 12px 20px;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(20, 40, 30, 0.92), rgba(30, 60, 45, 0.95));
-  border: 2px solid rgba(120, 230, 160, 0.55);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-  color: #e8fff0;
-  font-weight: 800;
+  background: var(--scala-glass-elevated);
+  border: 1px solid rgba(76, 175, 122, 0.55);
+  box-shadow: var(--scala-panel-shadow);
+  color: var(--scala-fog);
+  font-family: var(--font-ui);
+  font-weight: 700;
   font-size: 0.92rem;
   opacity: 0;
   transform: translateY(-16px) scale(0.92);
@@ -820,7 +830,7 @@ body {
 }
 
 .objective-toast__icon {
-  color: #ffd54f;
+  color: var(--scala-brass-bright);
   font-size: 1.1rem;
   animation: toast-sparkle 0.8s ease infinite;
 }
@@ -841,13 +851,14 @@ body {
 
 .gameplay-toast {
   padding: 10px 18px;
-  border-radius: 10px;
-  background: rgba(18, 24, 36, 0.92);
-  border: 2px solid rgba(255, 180, 80, 0.55);
-  color: #fff6e8;
+  border-radius: var(--scala-radius-sm);
+  background: var(--scala-glass-elevated);
+  border: 1px solid var(--scala-glass-border-strong);
+  color: var(--scala-cream);
+  font-family: var(--font-ui);
   font-weight: 700;
   font-size: 0.88rem;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--scala-panel-shadow);
   opacity: 0;
   transform: translateY(8px);
   transition: opacity 0.25s ease, transform 0.25s ease;
@@ -881,20 +892,23 @@ body {
 }
 
 .dimension-panel-inner {
-  background: rgba(18, 28, 22, 0.92);
-  border: 2px solid rgba(120, 200, 140, 0.35);
-  border-radius: 12px;
+  background: var(--scala-glass-elevated);
+  border: 1px solid var(--scala-glass-border-strong);
+  border-radius: var(--scala-radius-md);
   padding: 14px 16px;
-  color: #e8f5e9;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  color: var(--scala-fog);
+  backdrop-filter: var(--scala-panel-blur);
+  box-shadow: var(--scala-panel-shadow);
 }
 
 .dimension-title {
   margin: 0 0 10px;
-  font-size: 0.95rem;
+  font-family: var(--font-display);
+  font-size: 0.88rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--scala-brass-bright);
 }
 
 .dimension-tier {
@@ -916,8 +930,8 @@ body {
 }
 
 .dimension-tier-btn.is-active {
-  background: rgba(100, 200, 120, 0.35);
-  border-color: rgba(140, 230, 160, 0.6);
+  background: rgba(90, 158, 196, 0.28);
+  border-color: rgba(90, 158, 196, 0.6);
 }
 
 .dimension-slider {

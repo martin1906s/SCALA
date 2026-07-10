@@ -98,6 +98,7 @@ export class HUD {
         </div>
       </div>
       <div class="hud-panel" data-panel>
+        <p class="hud-panel__eyebrow">Construcción</p>
         <div class="hud-stats">
           <div class="hud-stat hud-stat--budget">
             <span class="hud-label">Presupuesto</span>

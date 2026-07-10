@@ -1,0 +1,431 @@
+/* ── SCALA · In-game UI (Guild Blueprint) ── */
+
+/* ── HUD stats & chips ── */
+.hud-panel__eyebrow {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--scala-brass);
+  margin-bottom: 8px;
+}
+
+.hud-stat {
+  padding: 8px 10px;
+  border-radius: var(--scala-radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--scala-glass-border);
+}
+
+.hud-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--scala-brass);
+}
+
+.hud-objective {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.hud-objective--done {
+  border-color: rgba(76, 175, 122, 0.35);
+}
+
+.hud-objective__progress {
+  color: var(--scala-brass-bright);
+}
+
+.hud-mission__chevron {
+  color: var(--scala-brass-bright);
+}
+
+/* ── Taller de materiales ── */
+.dimension-panel-inner {
+  position: relative;
+  overflow: hidden;
+}
+
+.dimension-panel-inner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--scala-brass), var(--scala-sky), var(--scala-brass));
+  opacity: 0.85;
+}
+
+.dimension-header {
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--scala-glass-border);
+}
+
+.dimension-header__eyebrow {
+  display: block;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--scala-brass);
+  margin-bottom: 2px;
+}
+
+.dimension-section {
+  margin-bottom: 12px;
+}
+
+.dimension-section__label,
+.dimension-label {
+  display: block;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--scala-fog-dim);
+  margin-bottom: 6px;
+}
+
+.dimension-tier-btn {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  border: 1px solid var(--scala-glass-border);
+  border-radius: var(--scala-radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--scala-fog);
+  transition:
+    background var(--scala-duration),
+    border-color var(--scala-duration),
+    color var(--scala-duration);
+}
+
+.dimension-tier-btn:hover:not(.is-active) {
+  border-color: var(--scala-glass-border-strong);
+  background: rgba(196, 160, 74, 0.08);
+}
+
+.dimension-tier-btn.is-active {
+  color: var(--scala-cream);
+  background: rgba(90, 158, 196, 0.22);
+  border-color: rgba(90, 158, 196, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(90, 158, 196, 0.2);
+}
+
+.dimension-slider__label {
+  font-weight: 600;
+  color: var(--scala-fog);
+}
+
+.dimension-slider__value {
+  font-weight: 700;
+  color: var(--scala-brass-bright);
+  font-variant-numeric: tabular-nums;
+}
+
+.dimension-slider input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  accent-color: var(--scala-sky);
+}
+
+.dimension-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--scala-brass-bright);
+  border: 2px solid var(--scala-navy);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+
+.dimension-slider input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--scala-brass-bright);
+  border: 2px solid var(--scala-navy);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+
+.dimension-cost {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 12px 0;
+  padding: 0;
+  background: none;
+  border-radius: 0;
+}
+
+.dimension-cost__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 6px;
+  text-align: center;
+  font-size: 0.62rem;
+  color: var(--scala-fog-dim);
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--scala-glass-border);
+  border-radius: var(--scala-radius-sm);
+}
+
+.dimension-cost__item strong {
+  font-size: 0.82rem;
+  color: var(--scala-brass-bright);
+  font-variant-numeric: tabular-nums;
+}
+
+.dimension-cost__item--total {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+  padding: 10px 12px;
+  background: rgba(196, 160, 74, 0.1);
+  border-color: var(--scala-glass-border-strong);
+}
+
+.dimension-cost__item--total strong {
+  font-size: 1rem;
+}
+
+.dimension-warning {
+  padding: 8px 10px;
+  border-radius: var(--scala-radius-sm);
+  background: rgba(212, 93, 74, 0.15);
+  border: 1px solid rgba(212, 93, 74, 0.4);
+  color: #ffc9be;
+  font-weight: 600;
+}
+
+.dimension-blueprints {
+  padding-top: 10px;
+  border-top: 1px solid var(--scala-glass-border);
+}
+
+.dimension-blueprint-btn {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  border: 1px solid var(--scala-glass-border);
+  border-radius: var(--scala-radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--scala-fog);
+  transition: background var(--scala-duration), border-color var(--scala-duration);
+}
+
+.dimension-blueprint-btn:hover {
+  background: rgba(90, 158, 196, 0.15);
+  border-color: rgba(90, 158, 196, 0.45);
+}
+
+/* ── Panel de selección / rotación ── */
+.selection-panel-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.selection-eyebrow {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--scala-brass);
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.selection-strip {
+  border: 1px solid var(--scala-glass-border);
+}
+
+.selection-strip--active {
+  border-color: var(--scala-glass-border-strong);
+}
+
+.selection-preview {
+  border: 2px solid var(--scala-glass-border-strong);
+  box-shadow:
+    inset 0 2px 8px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(196, 160, 74, 0.15);
+}
+
+.selection-title {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  color: var(--scala-cream);
+}
+
+.selection-arrow {
+  border: 1px solid var(--scala-glass-border);
+  border-radius: var(--scala-radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--scala-fog);
+  transition:
+    background var(--scala-duration),
+    border-color var(--scala-duration),
+    transform 0.1s;
+}
+
+.selection-arrow:hover {
+  background: rgba(196, 160, 74, 0.12);
+  border-color: var(--scala-glass-border-strong);
+}
+
+.selection-arrow:active {
+  background: rgba(90, 158, 196, 0.28);
+  transform: scale(0.94);
+}
+
+.selection-action {
+  font-family: var(--font-ui);
+  border: 1px solid var(--scala-glass-border);
+  border-radius: var(--scala-radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--scala-fog);
+  letter-spacing: 0.02em;
+  transition: background var(--scala-duration), border-color var(--scala-duration);
+}
+
+.selection-action:hover {
+  background: rgba(76, 175, 122, 0.18);
+  border-color: rgba(76, 175, 122, 0.45);
+}
+
+.selection-action[data-action="sell"]:hover {
+  background: rgba(212, 93, 74, 0.2);
+  border-color: rgba(212, 93, 74, 0.45);
+}
+
+/* ── Mover pieza ── */
+.move-panel-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--scala-brass);
+}
+
+.move-btn {
+  border: 1px solid var(--scala-glass-border);
+  border-radius: var(--scala-radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--scala-fog);
+  transition: background var(--scala-duration), transform 0.1s;
+}
+
+.move-btn:hover:not(:disabled) {
+  background: rgba(196, 160, 74, 0.14);
+  border-color: var(--scala-glass-border-strong);
+}
+
+.move-btn:active:not(:disabled) {
+  background: rgba(90, 158, 196, 0.3);
+  transform: scale(0.94);
+}
+
+.move-panel-hint {
+  color: var(--scala-fog-dim);
+  font-size: 0.62rem;
+}
+
+/* ── Toolbar superior ── */
+.ui-toolbar-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.ui-toolbar-label {
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--scala-brass);
+  padding-right: 4px;
+}
+
+.ui-toolbar-btn.is-off {
+  opacity: 0.35;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.ui-toolbar-btn.is-active,
+.ui-toolbar-btn:not(.is-off) {
+  border-color: var(--scala-glass-border-strong);
+}
+
+/* ── Tooltips ── */
+.has-tooltip::after {
+  font-family: var(--font-ui);
+  background: var(--scala-glass-elevated);
+  border: 1px solid var(--scala-glass-border-strong);
+  color: var(--scala-fog);
+  box-shadow: var(--scala-panel-shadow);
+}
+
+/* ── Diálogo victoria (tokens) ── */
+.game-dialogue__victory-btn {
+  font-family: var(--font-ui);
+  border: 2px solid var(--scala-navy);
+  box-shadow: 3px 3px 0 var(--scala-navy);
+  color: var(--scala-navy);
+}
+
+.game-dialogue__victory-btn--primary {
+  background: linear-gradient(180deg, #d4f0e4 0%, #b8e6cc 100%);
+  border-color: #1a5c32;
+  box-shadow: 3px 3px 0 #1a5c32;
+  color: #1a4a2e;
+}
+
+.game-dialogue__objective {
+  background: var(--scala-cream);
+  border: 1px solid rgba(26, 45, 66, 0.15);
+  border-radius: var(--scala-radius-sm);
+}
+
+.game-dialogue__objective.is-done {
+  background: #e8f5ec;
+  border-color: rgba(76, 175, 122, 0.45);
+}
+
+.game-dialogue__check {
+  border-radius: var(--scala-radius-sm);
+  color: var(--scala-sky);
+  border-color: var(--scala-sky);
+}
+
+.game-dialogue__objective.is-done .game-dialogue__check {
+  color: var(--scala-success);
+  border-color: var(--scala-success);
+  background: rgba(76, 175, 122, 0.15);
+}
+
+/* Desktop: misión y herramientas con más aire */
+@media (min-width: 1025px) {
+  .hud-mission,
+  .hud-panel {
+    border-radius: var(--scala-radius-lg);
+  }
+
+  .dimension-panel-inner {
+    padding: 16px 18px;
+  }
+
+  .hud-toolbar {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+  }
+}

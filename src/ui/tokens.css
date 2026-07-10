@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
+
+/* ── SCALA · Guild Blueprint design tokens ── */
+:root {
+  --font-display: 'Bricolage Grotesque', Georgia, serif;
+  --font-ui: 'DM Sans', system-ui, sans-serif;
+
+  --scala-ink: #0a1018;
+  --scala-navy: #121f2e;
+  --scala-navy-mid: #1a2d42;
+  --scala-slate: #2a4058;
+  --scala-fog: rgba(214, 226, 240, 0.88);
+  --scala-fog-dim: rgba(214, 226, 240, 0.55);
+  --scala-cream: #f0ebe2;
+  --scala-paper: #faf6ee;
+  --scala-brass: #c4a04a;
+  --scala-brass-bright: #e4c468;
+  --scala-copper: #b86a4a;
+  --scala-terracotta: #d4734a;
+  --scala-sky: #5a9ec4;
+  --scala-blueprint: rgba(90, 158, 196, 0.28);
+  --scala-success: #4caf7a;
+  --scala-success-glow: rgba(76, 175, 122, 0.35);
+  --scala-danger: #d45d4a;
+  --scala-warning: #e8c547;
+
+  --scala-glass: rgba(10, 18, 30, 0.82);
+  --scala-glass-elevated: rgba(16, 26, 40, 0.92);
+  --scala-glass-border: rgba(196, 160, 74, 0.2);
+  --scala-glass-border-strong: rgba(196, 160, 74, 0.42);
+  --scala-panel-shadow: 0 14px 44px rgba(0, 0, 0, 0.42);
+  --scala-panel-blur: blur(14px);
+
+  --scala-radius-sm: 8px;
+  --scala-radius-md: 12px;
+  --scala-radius-lg: 16px;
+
+  --scala-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --scala-duration: 0.22s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --scala-duration: 0.01ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Superficie reutilizable en HUD y paneles del juego */
+.scala-surface {
+  background: var(--scala-glass);
+  backdrop-filter: var(--scala-panel-blur);
+  border: 1px solid var(--scala-glass-border);
+  box-shadow: var(--scala-panel-shadow);
+  color: var(--scala-fog);
+  font-family: var(--font-ui);
+}
+
+.scala-surface--paper {
+  background: var(--scala-paper);
+  color: var(--scala-navy);
+  border: 2px solid var(--scala-navy);
+  box-shadow: 6px 6px 0 var(--scala-navy);
+}

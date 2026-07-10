@@ -35,6 +35,7 @@ export class SelectionPanel {
 
     this.root.innerHTML = `
       <div class="selection-panel-inner">
+        <p class="selection-eyebrow">Rotar material</p>
         <div class="selection-strip" data-strip>
           <button type="button" class="selection-arrow" data-rotate-dir="-1" aria-label="Girar izquierda">
             ‹
