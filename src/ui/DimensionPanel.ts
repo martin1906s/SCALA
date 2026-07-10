@@ -127,10 +127,10 @@ export class DimensionPanel {
     const { uiVisibility } = state;
 
     const isBuildTool = BUILD_PIECE_TYPES.includes(tool as PieceType);
-    this.root.classList.toggle(
-      'dimension-panel--hidden',
-      !uiVisibility.dimensions || !isBuildTool,
-    );
+    const hidden = !uiVisibility.dimensions || !isBuildTool;
+    this.root.classList.toggle('dimension-panel--hidden', hidden);
+    this.root.toggleAttribute('inert', hidden);
+    this.root.setAttribute('aria-hidden', hidden ? 'true' : 'false');
 
     if (!isBuildTool) {
       this.builtTool = null;

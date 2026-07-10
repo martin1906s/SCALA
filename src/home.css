@@ -9,7 +9,15 @@
   align-items: center;
   justify-content: center;
   font-family: 'Fredoka', system-ui, sans-serif;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding:
+    calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 12px)
+    calc(var(--safe-right, env(safe-area-inset-right, 0px)) + 12px)
+    calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 12px)
+    calc(var(--safe-left, env(safe-area-inset-left, 0px)) + 12px);
   transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
@@ -50,8 +58,10 @@
   position: relative;
   z-index: 2;
   text-align: center;
-  padding: 24px;
-  max-width: 420px;
+  padding: clamp(12px, 4vw, 24px);
+  max-width: min(420px, 100%);
+  width: 100%;
+  margin: auto 0;
 }
 
 .home-house {
@@ -119,10 +129,27 @@
 }
 
 .home-tagline {
-  font-size: 1.15rem;
+  font-size: clamp(0.95rem, 3.5vw, 1.15rem);
   font-weight: 500;
   color: #1e4d6b;
-  margin-bottom: 22px;
+  margin-bottom: 8px;
+}
+
+.home-orient-hint {
+  font-size: clamp(0.78rem, 2.8vw, 0.88rem);
+  font-weight: 600;
+  color: #3d6b4f;
+  margin-bottom: clamp(12px, 3vw, 18px);
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+  display: none;
+}
+
+@media (orientation: portrait) and (max-width: 600px) and (pointer: coarse) and (hover: none) {
+  .home-orient-hint {
+    display: inline-block;
+  }
 }
 
 .home-tips {
@@ -160,14 +187,16 @@
 
 .home-play {
   font-family: inherit;
-  font-size: 1.35rem;
+  font-size: clamp(1rem, 4.5vw, 1.35rem);
   font-weight: 700;
   color: #fff;
   background: #e85d4c;
   border: none;
   border-bottom: 5px solid #c04435;
   border-radius: 16px;
-  padding: 16px 48px;
+  padding: clamp(12px, 3vw, 16px) clamp(28px, 10vw, 48px);
+  min-height: 48px;
+  width: min(100%, 320px);
   cursor: pointer;
   transition: transform 0.12s, border-width 0.12s, margin-top 0.12s;
   box-shadow: 0 6px 20px rgba(232, 93, 76, 0.35);
@@ -187,18 +216,19 @@
 .home-play--sandbox {
   background: linear-gradient(180deg, #5a8f6e 0%, #3d6b4f 100%);
   box-shadow: 0 6px 20px rgba(61, 107, 79, 0.35);
-  font-size: 1rem;
-  padding: 12px 36px;
+  font-size: clamp(0.9rem, 3.5vw, 1rem);
+  padding: clamp(10px, 2.5vw, 12px) clamp(24px, 8vw, 36px);
 }
 
 .home-levels {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 20px;
-  max-width: 340px;
+  margin-bottom: clamp(14px, 4vw, 20px);
+  max-width: min(340px, 100%);
   margin-left: auto;
   margin-right: auto;
+  width: 100%;
 }
 
 .home-level-card {
@@ -208,7 +238,8 @@
   align-items: center;
   font-family: inherit;
   text-align: left;
-  padding: 10px 14px;
+  padding: 12px 14px;
+  min-height: 48px;
   border-radius: 12px;
   border: 2px solid rgba(0, 0, 0, 0.1);
   background: rgba(255, 255, 255, 0.72);
@@ -311,6 +342,33 @@
 .fb1 { --r: 12deg; }
 .fb2 { --r: -8deg; }
 .fb3 { --r: 0deg; }
+
+@media (max-width: 520px) {
+  .home-tips {
+    gap: 8px;
+    font-size: 0.82rem;
+  }
+
+  .home-house {
+    transform: scale(0.88);
+    margin-bottom: 12px;
+  }
+
+  .home-deco .float-block {
+    opacity: 0.5;
+    transform: scale(0.75);
+  }
+}
+
+@media (max-height: 640px) {
+  .home-house {
+    display: none;
+  }
+
+  .home-tips {
+    margin-bottom: 16px;
+  }
+}
 
 /* ── Game layer (hidden until play) ── */
 #renderCanvas,

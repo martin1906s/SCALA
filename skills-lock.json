@@ -6,6 +6,12 @@
       "sourceType": "github",
       "skillPath": "skills/03-by-role-persona/game-designer/SKILL.md",
       "computedHash": "1a9671692befb9dd664ec2ebaba1fb980d0c60157e1ddaa024dfa9d9c3cf1ff8"
+    },
+    "responsive-design": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/ui-design/skills/responsive-design/SKILL.md",
+      "computedHash": "155eff4b1bc8d867ae6bea9900c485ab1081de0b4873c1900adb66bf62466aed"
     }
   }
 }

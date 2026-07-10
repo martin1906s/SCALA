@@ -75,95 +75,6 @@
   box-shadow: 1px 1px 0 #111111;
 }
 
-/* Icono de misión en esquina inferior izquierda */
-.game-dialogue__dock {
-  position: fixed;
-  left: 16px;
-  bottom: 16px;
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 54px;
-  height: 54px;
-  padding: 0;
-  border: 3px solid #111111;
-  border-radius: 14px;
-  background: #ffffff;
-  color: #2b6ea8;
-  cursor: pointer;
-  box-shadow: 5px 5px 0 #111111;
-  pointer-events: auto;
-  opacity: 1;
-  transform: scale(1) translateY(0);
-}
-
-.game-dialogue__dock.is-dock-hidden {
-  display: none;
-}
-
-.game-dialogue__dock.is-bouncing {
-  animation: dock-bounce-in 0.55s cubic-bezier(0.34, 1.4, 0.64, 1);
-}
-
-.game-dialogue__dock:hover {
-  background: #f4f9ff;
-  transform: scale(1.06) translateY(-2px);
-  box-shadow: 6px 7px 0 #111111;
-}
-
-.game-dialogue__dock:active {
-  transform: scale(0.96) translateY(1px);
-  box-shadow: 3px 3px 0 #111111;
-}
-
-.game-dialogue__dock.is-bouncing {
-  animation: dock-bounce-in 0.55s cubic-bezier(0.34, 1.4, 0.64, 1);
-}
-
-.game-dialogue__dock.is-complete {
-  color: #2d9a55;
-  background: #f0fff5;
-  border-color: #1a5c32;
-  box-shadow: 5px 5px 0 #1a5c32;
-}
-
-.game-dialogue__dock-icon {
-  display: block;
-}
-
-.game-dialogue__dock-badge {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 5px;
-  border: 2px solid #111111;
-  border-radius: 11px;
-  background: #3d8fd1;
-  color: #ffffff;
-  font-size: 0.68rem;
-  font-weight: 800;
-  line-height: 18px;
-  text-align: center;
-  box-shadow: 2px 2px 0 #111111;
-}
-
-.game-dialogue__dock.is-complete .game-dialogue__dock-badge {
-  background: #2d9a55;
-}
-
-.game-dialogue--minimized {
-  pointer-events: none !important;
-}
-
-.game-dialogue--minimized .game-dialogue__dock {
-  pointer-events: auto !important;
-  display: flex !important;
-  opacity: 1 !important;
-}
-
 .game-dialogue__frame.is-entering {
   animation: dialogue-pop-in 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
@@ -406,12 +317,6 @@
   50% { transform: scale(1.01); }
 }
 
-@keyframes dock-bounce-in {
-  0% { transform: scale(0.5) translateY(10px); opacity: 0.5; }
-  60% { transform: scale(1.12) translateY(-4px); opacity: 1; }
-  100% { transform: scale(1) translateY(0); opacity: 1; }
-}
-
 @keyframes objective-check-pop {
   0% { transform: scale(0.92); box-shadow: 0 0 0 rgba(45, 154, 85, 0); }
   45% { transform: scale(1.04); box-shadow: 0 0 0 6px rgba(45, 154, 85, 0.2); }
@@ -502,17 +407,38 @@
   100% { transform: scale(1) rotate(0); opacity: 1; }
 }
 
+@media (max-width: 767px) {
+  .game-dialogue__frame {
+    width: calc(100vw - var(--safe-left) - var(--safe-right) - 24px);
+    bottom: calc(var(--safe-bottom) + 12px);
+    padding: 14px 16px 20px;
+    max-height: min(72dvh, 520px);
+    overflow-y: auto;
+  }
+
+  .game-dialogue__text {
+    font-size: var(--font-md, 1rem);
+  }
+
+  .game-dialogue__objective {
+    grid-template-columns: 24px 1fr auto;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .game-dialogue__objective-text {
+    font-size: var(--font-sm, 0.92rem);
+  }
+
+  .game-dialogue__victory-btn {
+    min-height: 44px;
+  }
+}
+
 @media (max-width: 520px) {
   .game-dialogue__frame {
     padding: 14px 16px 20px;
-    bottom: 16px;
-  }
-
-  .game-dialogue__dock {
-    left: 12px;
-    bottom: 12px;
-    width: 48px;
-    height: 48px;
+    bottom: calc(var(--safe-bottom) + 12px);
   }
 
   .game-dialogue__text {

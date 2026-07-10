@@ -21,6 +21,7 @@ import { GameplayToast } from '@/ui/GameplayToast';
 import type { GameMode } from '@/store/gameStore';
 import { useGameStore } from '@/store/gameStore';
 import { loadSave } from '@/utils/progressStorage';
+import { tryLockLandscape } from '@/utils/orientation';
 
 export class Game {
   private sceneManager: SceneManager | null = null;
@@ -159,7 +160,10 @@ export class Game {
     });
     void this.levelManager.start();
 
-    this.canvas.addEventListener('pointerdown', () => this.juiceSystem?.ensureAudio(), { once: true });
+    this.canvas.addEventListener('pointerdown', () => {
+      this.juiceSystem?.ensureAudio();
+      void tryLockLandscape();
+    }, { once: true });
 
     this.sceneManager.startRenderLoop();
   }

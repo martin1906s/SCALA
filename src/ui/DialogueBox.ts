@@ -1,5 +1,5 @@
 import { blockGamePointer } from '@/utils/blockGamePointer';
-import { prefersReducedMotion, typewriterText } from '@/utils/animations';
+import { typewriterText } from '@/utils/animations';
 import { useGameStore } from '@/store/gameStore';
 
 export type DialogueMode = 'intro' | 'objectives' | 'victory';
@@ -32,8 +32,6 @@ export class DialogueBox {
   private readonly nextEl: HTMLElement;
   private readonly continueEl: HTMLElement;
   private readonly minimizeEl: HTMLButtonElement;
-  private readonly dockEl: HTMLButtonElement;
-  private readonly dockBadgeEl: HTMLElement;
   private readonly victoryCardEl: HTMLElement;
 
   private lines: string[] = [];
@@ -42,8 +40,7 @@ export class DialogueBox {
   private onAdvance: (() => void) | null = null;
   private keyHandler: ((e: KeyboardEvent) => void) | null = null;
   private visible = false;
-  private minimized = false;
-  private animating = false;
+  private objectivesDismissed = false;
   private typewriterToken = 0;
   private previousDoneIds = new Set<string>();
 
@@ -90,19 +87,6 @@ export class DialogueBox {
         </div>
         <p class="game-dialogue__continue" data-continue hidden>Clic o Enter para continuar</p>
       </div>
-      <button
-        type="button"
-        class="game-dialogue__dock is-dock-hidden"
-        data-dock
-        aria-label="Mostrar misión"
-        title="Mostrar misión"
-      >
-        <svg class="game-dialogue__dock-icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
-          <rect x="4" y="3" width="16" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
-          <path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <span class="game-dialogue__dock-badge" data-dock-badge></span>
-      </button>
     `;
 
     this.frameEl = this.root.querySelector('[data-frame]')!;
@@ -113,14 +97,11 @@ export class DialogueBox {
     this.nextEl = this.root.querySelector('[data-next]')!;
     this.continueEl = this.root.querySelector('[data-continue]') as HTMLElement;
     this.minimizeEl = this.root.querySelector('[data-minimize]') as HTMLButtonElement;
-    this.dockEl = this.root.querySelector('[data-dock]') as HTMLButtonElement;
-    this.dockBadgeEl = this.root.querySelector('[data-dock-badge]') as HTMLElement;
     this.victoryCardEl = this.root.querySelector('[data-victory-card]') as HTMLElement;
 
     const backdrop = this.root.querySelector('[data-backdrop]') as HTMLElement;
     blockGamePointer(this.frameEl);
     blockGamePointer(backdrop);
-    blockGamePointer(this.dockEl);
 
     this.frameEl.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
@@ -130,16 +111,12 @@ export class DialogueBox {
     backdrop.addEventListener('click', () => this.advance());
     this.minimizeEl.addEventListener('click', (e) => {
       e.stopPropagation();
-      void this.minimizeObjectives();
-    });
-    this.dockEl.addEventListener('click', () => {
-      void this.restoreObjectives();
+      this.dismissObjectives();
     });
   }
 
   dispose(): void {
     this.detachKeys();
-    this.dockEl.remove();
     this.root.replaceChildren();
     this.root.className = '';
   }
@@ -179,10 +156,10 @@ export class DialogueBox {
 
   showObjectives(title: string, tagline: string, objectives: ObjectiveProgress[]): void {
     this.mode = 'objectives';
-    this.minimized = false;
+    this.objectivesDismissed = false;
     this.detachKeys();
     this.onAdvance = null;
-    this.root.classList.remove('game-dialogue--victory', 'game-dialogue--minimized');
+    this.root.classList.remove('game-dialogue--victory');
     this.titleEl.textContent = title;
     this.setTagline(tagline);
     this.textEl.hidden = true;
@@ -191,30 +168,21 @@ export class DialogueBox {
     this.minimizeEl.hidden = false;
     this.previousDoneIds = new Set(objectives.filter((o) => o.done).map((o) => o.id));
     this.renderObjectives(objectives);
-    this.updateDockBadge(objectives);
-    this.hideDock();
-    this.resetFrameLayout();
     this.show(false);
     window.setTimeout(() => {
-      if (this.mode === 'objectives' && !this.minimized && this.visible) {
-        void this.minimizeObjectives();
+      if (this.mode === 'objectives' && !this.objectivesDismissed && this.visible) {
+        this.dismissObjectives();
       }
     }, 900);
   }
 
   updateObjectives(objectives: ObjectiveProgress[]): void {
-    if (this.mode !== 'objectives') return;
+    if (this.mode !== 'objectives' || this.objectivesDismissed) return;
     this.renderObjectives(objectives, this.previousDoneIds);
     for (const obj of objectives) {
       if (obj.done) {
         this.previousDoneIds.add(obj.id);
       }
-    }
-    this.updateDockBadge(objectives);
-    if (this.minimized) {
-      this.dockEl.classList.remove('is-bouncing');
-      void this.dockEl.offsetWidth;
-      this.dockEl.classList.add('is-bouncing');
     }
   }
 
@@ -276,20 +244,17 @@ export class DialogueBox {
 
   hide(): void {
     this.visible = false;
-    this.minimized = false;
-    this.animating = false;
+    this.objectivesDismissed = false;
     this.typewriterToken += 1;
     this.detachKeys();
     useGameStore.getState().setDialogueBlocking(false);
-    this.root.classList.remove('is-visible', 'game-dialogue--overlay', 'game-dialogue--minimized');
+    this.root.classList.remove('is-visible', 'game-dialogue--overlay');
     const frame = this.root.querySelector('[data-frame]') as HTMLElement;
     const backdrop = this.root.querySelector('[data-backdrop]') as HTMLElement;
     frame.hidden = true;
     backdrop.hidden = true;
-    this.hideDock();
     this.minimizeEl.hidden = true;
     this.victoryCardEl.hidden = true;
-    this.resetFrameLayout();
   }
 
   private setTagline(tagline?: string): void {
@@ -319,153 +284,14 @@ export class DialogueBox {
     }
   }
 
-  private async minimizeObjectives(): Promise<void> {
-    if (this.mode !== 'objectives' || this.minimized || this.animating) return;
+  private dismissObjectives(): void {
+    if (this.mode !== 'objectives' || this.objectivesDismissed) return;
 
-    this.animating = true;
-    try {
-      this.showDock();
-      void this.dockEl.offsetWidth;
-
-      const from = this.frameEl.getBoundingClientRect();
-      const to = this.dockEl.getBoundingClientRect();
-
-      this.frameEl.getAnimations().forEach((anim) => anim.cancel());
-      this.pinFrameToRect(from);
-
-      await this.animateFrameBetween(from, to, 'minimize');
-
-      this.frameEl.hidden = true;
-      this.frameEl.getAnimations().forEach((anim) => anim.cancel());
-      this.resetFrameLayout();
-      this.minimized = true;
-      this.root.classList.add('game-dialogue--minimized');
-      this.dockEl.classList.remove('is-bouncing');
-      void this.dockEl.offsetWidth;
-      this.dockEl.classList.add('is-bouncing');
-    } finally {
-      this.animating = false;
-    }
-  }
-
-  private async restoreObjectives(): Promise<void> {
-    if (this.mode !== 'objectives' || !this.minimized || this.animating) return;
-
-    this.animating = true;
-    try {
-      this.root.classList.remove('game-dialogue--minimized');
-
-      const from = this.dockEl.getBoundingClientRect();
-      this.frameEl.hidden = false;
-      this.resetFrameLayout();
-      this.frameEl.style.visibility = 'hidden';
-      const to = this.frameEl.getBoundingClientRect();
-      this.pinFrameToRect(from);
-      this.frameEl.style.visibility = 'visible';
-      this.frameEl.style.opacity = '0.92';
-
-      this.frameEl.getAnimations().forEach((anim) => anim.cancel());
-      await this.animateFrameBetween(from, to, 'restore');
-
-      this.frameEl.getAnimations().forEach((anim) => anim.cancel());
-      this.resetFrameLayout();
-      this.frameEl.style.opacity = '';
-      this.hideDock();
-      this.minimized = false;
-
-      this.frameEl.classList.remove('is-entering');
-      void this.frameEl.offsetWidth;
-      this.frameEl.classList.add('is-entering');
-    } finally {
-      this.animating = false;
-    }
-  }
-
-  private showDock(): void {
-    this.dockEl.classList.remove('is-dock-hidden');
-    this.dockEl.setAttribute('aria-hidden', 'false');
-  }
-
-  private hideDock(): void {
-    this.dockEl.classList.add('is-dock-hidden');
-    this.dockEl.classList.remove('is-bouncing');
-    this.dockEl.setAttribute('aria-hidden', 'true');
-  }
-
-  private pinFrameToRect(rect: DOMRect): void {
-    this.frameEl.style.left = `${rect.left}px`;
-    this.frameEl.style.top = `${rect.top}px`;
-    this.frameEl.style.bottom = 'auto';
-    this.frameEl.style.width = `${rect.width}px`;
-    this.frameEl.style.height = `${rect.height}px`;
-    this.frameEl.style.transform = 'none';
-    this.frameEl.style.margin = '0';
-  }
-
-  private resetFrameLayout(): void {
-    this.frameEl.style.left = '';
-    this.frameEl.style.top = '';
-    this.frameEl.style.bottom = '';
-    this.frameEl.style.width = '';
-    this.frameEl.style.height = '';
-    this.frameEl.style.transform = '';
-    this.frameEl.style.margin = '';
-    this.frameEl.style.opacity = '';
-    this.frameEl.style.borderRadius = '';
-  }
-
-  private animateFrameBetween(
-    from: DOMRect,
-    to: DOMRect,
-    direction: 'minimize' | 'restore',
-  ): Promise<void> {
-    const reduced = prefersReducedMotion();
-    const duration = reduced ? 120 : direction === 'minimize' ? 580 : 520;
-    const easing = 'cubic-bezier(0.32, 0.72, 0, 1)';
-
-    const animation = this.frameEl.animate(
-      [
-        {
-          left: `${from.left}px`,
-          top: `${from.top}px`,
-          width: `${from.width}px`,
-          height: `${from.height}px`,
-          opacity: direction === 'minimize' ? 1 : 0.85,
-          borderRadius: direction === 'minimize' ? '0px' : '14px',
-          filter: 'blur(0px)',
-        },
-        {
-          left: `${from.left + (to.left - from.left) * 0.55}px`,
-          top: `${from.top + (to.top - from.top) * 0.72}px`,
-          width: `${from.width * 0.42 + to.width * 0.58}px`,
-          height: `${from.height * 0.35 + to.height * 0.65}px`,
-          opacity: 0.92,
-          borderRadius: '10px',
-          filter: 'blur(0px)',
-          offset: 0.62,
-        },
-        {
-          left: `${to.left}px`,
-          top: `${to.top}px`,
-          width: `${to.width}px`,
-          height: `${to.height}px`,
-          opacity: direction === 'minimize' ? 0 : 1,
-          borderRadius: '14px',
-          filter: reduced ? 'blur(0px)' : 'blur(1px)',
-        },
-      ],
-      { duration, easing, fill: 'forwards' },
-    );
-
-    return animation.finished.then(() => undefined);
-  }
-
-  private updateDockBadge(objectives: ObjectiveProgress[]): void {
-    const done = objectives.filter((o) => o.done).length;
-    const total = objectives.length;
-    this.dockBadgeEl.textContent = total > 0 ? `${done}/${total}` : '';
-    this.dockBadgeEl.hidden = total === 0;
-    this.dockEl.classList.toggle('is-complete', total > 0 && done === total);
+    this.objectivesDismissed = true;
+    this.frameEl.hidden = true;
+    this.minimizeEl.hidden = true;
+    this.visible = false;
+    this.root.classList.remove('is-visible');
   }
 
   private async renderLine(): Promise<void> {

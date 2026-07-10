@@ -142,6 +142,8 @@ export class SelectionPanel {
     const { selectedTool, selectedPieceId, previewRotation, uiVisibility } = state;
 
     this.root.classList.toggle('selection-panel--hidden', !uiVisibility.rotation);
+    this.root.toggleAttribute('inert', !uiVisibility.rotation);
+    this.root.setAttribute('aria-hidden', uiVisibility.rotation ? 'false' : 'true');
 
     if (selectedPieceId) {
       const piece = this.buildingSystem.getPieceById(selectedPieceId);

@@ -6,13 +6,43 @@
   padding: 0;
 }
 
+:root {
+  --space-xs: clamp(4px, 1vw, 6px);
+  --space-sm: clamp(8px, 2vw, 12px);
+  --space-md: clamp(12px, 2.5vw, 16px);
+  --space-lg: clamp(16px, 3vw, 24px);
+  --ui-radius: clamp(8px, 2vw, 12px);
+  --touch-min: 44px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --font-xs: clamp(0.62rem, 2.4vw, 0.72rem);
+  --font-sm: clamp(0.72rem, 2.8vw, 0.85rem);
+  --font-md: clamp(0.85rem, 3vw, 1rem);
+  --panel-pad: var(--space-md);
+  --hud-top: calc(var(--safe-top) + var(--space-md));
+  --hud-side: calc(var(--safe-left) + var(--space-md));
+  --move-panel-offset: -168px;
+  --dimension-sheet-height: min(42dvh, 360px);
+}
+
+html {
+  height: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
 html,
 body {
   width: 100%;
-  height: 100%;
   overflow: hidden;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   background: #1a1a2e;
+}
+
+body {
+  min-height: 100dvh;
+  height: 100dvh;
 }
 
 #renderCanvas {
@@ -31,13 +61,15 @@ body {
   inset: 0;
   z-index: 20;
   pointer-events: none;
+  container-type: size;
+  container-name: game-ui;
 }
 
 #hud,
-#selection-panel,
-#move-panel,
+#selection-panel:not(.selection-panel--hidden),
+#move-panel:not(.move-panel--hidden),
 #ui-toolbar,
-#dimension-panel {
+#dimension-panel:not(.dimension-panel--hidden) {
   pointer-events: auto;
 }
 
@@ -51,12 +83,13 @@ body {
 
 .hud {
   position: fixed;
-  top: 16px;
-  left: 16px;
+  top: var(--hud-top);
+  left: var(--hud-side);
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-sm);
+  max-width: min(280px, calc(100vw - var(--safe-left) - var(--safe-right) - 72px));
 }
 
 .hud-mission {
@@ -81,6 +114,32 @@ body {
   animation: hud-mission-pulse 0.55s ease;
 }
 
+.hud-mission__toggle {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: default;
+}
+
+.hud-mission__summary {
+  display: block;
+  min-width: 0;
+}
+
+.hud-mission__chevron {
+  display: none;
+}
+
+.hud-mission__body {
+  display: block;
+}
+
 .hud-mission__header {
   display: flex;
   justify-content: space-between;
@@ -103,6 +162,7 @@ body {
 }
 
 .hud-mission__title {
+  display: block;
   font-size: 0.95rem;
   font-weight: 800;
   line-height: 1.2;
@@ -206,11 +266,32 @@ body {
   pointer-events: auto;
   min-width: 220px;
   padding: 14px 16px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(6px);
+  border-radius: 12px;
+  background: rgba(8, 14, 24, 0.82);
+  backdrop-filter: blur(10px);
   color: #f5f5f5;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+.hud-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.hud-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.hud-actions-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .hud-row {
@@ -239,24 +320,66 @@ body {
   font-weight: 600;
 }
 
+.hud-cost {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
 .hud-toolbar {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 6px;
-  margin-top: 10px;
+}
+
+.hud-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.hud-btn__short {
+  display: none;
+  font-weight: 800;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.hud-btn__label {
+  line-height: 1.2;
+}
+
+.hud-history-btn__icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.hud-history-btn__text {
+  line-height: 1.2;
 }
 
 .hud-history {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
-  margin-top: 8px;
 }
 
 .hud-history-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   padding: 7px 10px;
   border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 6px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
   font-size: 0.75rem;
@@ -277,17 +400,6 @@ body {
 .hud-history-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-.hud-btn {
-  padding: 8px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-  font-size: 0.78rem;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
 }
 
 .hud-btn:hover {
@@ -324,10 +436,11 @@ body {
 /* ── Selection panel (bottom center) ── */
 #selection-panel {
   position: fixed;
-  bottom: 20px;
+  bottom: calc(var(--safe-bottom) + 20px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 1;
+  max-width: calc(100vw - var(--safe-left) - var(--safe-right) - 16px);
 }
 
 .selection-panel {
@@ -336,7 +449,8 @@ body {
 
 .selection-panel--hidden {
   opacity: 0;
-  pointer-events: none;
+  visibility: hidden;
+  pointer-events: none !important;
   transform: translateY(12px);
 }
 
@@ -442,9 +556,9 @@ body {
 /* ── Move panel (flechas para mover pieza seleccionada) ── */
 #move-panel {
   position: fixed;
-  bottom: 22px;
+  bottom: calc(var(--safe-bottom) + 22px);
   left: 50%;
-  transform: translateX(calc(-50% - 168px));
+  transform: translateX(calc(-50% + var(--move-panel-offset)));
   z-index: 2;
 }
 
@@ -454,8 +568,9 @@ body {
 
 .move-panel--hidden {
   opacity: 0;
-  pointer-events: none;
-  transform: translateX(calc(-50% - 168px)) translateY(10px);
+  visibility: hidden;
+  pointer-events: none !important;
+  transform: translateX(calc(-50% + var(--move-panel-offset))) translateY(10px);
 }
 
 .move-panel-inner {
@@ -523,8 +638,8 @@ body {
 /* ── UI toolbar (top right) ── */
 #ui-toolbar {
   position: fixed;
-  top: 16px;
-  right: 16px;
+  top: var(--hud-top);
+  right: calc(var(--safe-right) + var(--space-md));
   z-index: 1;
 }
 
@@ -567,7 +682,15 @@ body {
 }
 
 .hud-panel.is-hidden {
-  display: none;
+  display: none !important;
+  pointer-events: none !important;
+  visibility: hidden;
+}
+
+#selection-panel.selection-panel--hidden,
+#move-panel.move-panel--hidden,
+#dimension-panel.dimension-panel--hidden {
+  pointer-events: none !important;
 }
 
 /* ── Tooltips ── */
@@ -743,16 +866,18 @@ body {
 /* ── Dimension panel ── */
 #dimension-panel {
   position: fixed;
-  right: 16px;
+  right: calc(var(--safe-right) + var(--space-md));
   top: 50%;
   transform: translateY(-50%);
   z-index: 25;
-  max-width: 280px;
+  max-width: min(280px, calc(100vw - var(--safe-left) - var(--safe-right) - 32px));
   pointer-events: auto;
 }
 
 .dimension-panel--hidden {
   display: none !important;
+  pointer-events: none !important;
+  visibility: hidden;
 }
 
 .dimension-panel-inner {

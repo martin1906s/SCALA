@@ -33,7 +33,8 @@ export class LevelManager {
   private unsubscribe: (() => void) | null = null;
   private completed = false;
   private started = false;
-  private completedObjectiveIds = new Set<string>();
+  /** Estado previo de cada objetivo para detectar transiciones (evita toast al cargar). */
+  private objectiveDoneSnapshot = new Map<string, boolean>();
 
   constructor(dialogue: DialogueBox, deps: LevelManagerDeps) {
     this.dialogue = dialogue;
@@ -66,7 +67,7 @@ export class LevelManager {
       return;
     }
 
-    this.completedObjectiveIds.clear();
+    this.objectiveDoneSnapshot.clear();
     this.grid.applyLevelLayout(this.level.id);
 
     const store = useGameStore.getState();
@@ -82,6 +83,9 @@ export class LevelManager {
     await this.dialogue.playLines('intro', this.level.name, this.level.intro, this.level.tagline);
 
     this.dialogue.showObjectives(this.level.name, this.level.tagline, this.computeProgress([]));
+
+    this.seedObjectiveSnapshot(store.pieces, store.budget);
+
     this.unsubscribe = useGameStore.subscribe((state, prevState) => {
       if (state.pieces === prevState.pieces && state.budget === prevState.budget) {
         return;
@@ -97,7 +101,7 @@ export class LevelManager {
     this.dialogue.hide();
     this.started = false;
     this.completed = false;
-    this.completedObjectiveIds.clear();
+    this.objectiveDoneSnapshot.clear();
     useGameStore.getState().setMission(null);
   }
 
@@ -109,12 +113,13 @@ export class LevelManager {
     this.syncMission(progress);
 
     for (const objective of progress) {
-      if (objective.done && !this.completedObjectiveIds.has(objective.id)) {
-        this.completedObjectiveIds.add(objective.id);
+      const wasDone = this.objectiveDoneSnapshot.get(objective.id) ?? false;
+      if (objective.done && !wasDone) {
         ObjectiveToast.show(`¡Reto cumplido! ${objective.text}`);
         Confetti.burst('normal');
         this.juice.onObjectiveComplete('objective');
       }
+      this.objectiveDoneSnapshot.set(objective.id, objective.done);
     }
 
     if (progress.every((obj) => obj.done)) {
@@ -153,6 +158,13 @@ export class LevelManager {
       total,
       objectives: progress,
     });
+  }
+
+  private seedObjectiveSnapshot(pieces: BuildingPiece[], budget: number): void {
+    this.objectiveDoneSnapshot.clear();
+    for (const objective of this.computeProgress(pieces, budget)) {
+      this.objectiveDoneSnapshot.set(objective.id, objective.done);
+    }
   }
 
   private computeProgress(pieces: BuildingPiece[], budget = useGameStore.getState().budget) {
@@ -229,7 +241,7 @@ export class LevelManager {
     useGameStore.getState().reset();
     this.completed = false;
     this.started = false;
-    this.completedObjectiveIds.clear();
+    this.objectiveDoneSnapshot.clear();
     await this.start();
   }
 }

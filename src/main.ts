@@ -1,9 +1,11 @@
 import './style.css';
+import './responsive.css';
 import './home.css';
 import './ui/dialogue.css';
 import { Game } from '@/core/Game';
 import { HomeScreen } from '@/ui/HomeScreen';
 import { loadSave } from '@/utils/progressStorage';
+import { bindOrientationGate, syncOrientationGate, tryLockLandscape } from '@/utils/orientation';
 import { useGameStore } from '@/store/gameStore';
 
 const canvas = document.getElementById('renderCanvas') as HTMLCanvasElement | null;
@@ -30,9 +32,14 @@ for (const [levelId, stars] of Object.entries(save.stars)) {
 
 let game: Game | null = null;
 
+bindOrientationGate();
+
 const home = new HomeScreen(homeRoot, ({ mode, levelIndex = 0 }) => {
   home.hide();
   document.body.classList.add('is-playing');
+  syncOrientationGate();
+
+  void tryLockLandscape();
 
   game = new Game(
     canvas,

@@ -44,6 +44,8 @@ export class SceneManager {
     this.startAmbientMotion();
 
     window.addEventListener('resize', this.handleResize);
+    window.visualViewport?.addEventListener('resize', this.handleViewportResize);
+    window.visualViewport?.addEventListener('scroll', this.handleViewportResize);
 
     return this.scene;
   }
@@ -78,6 +80,8 @@ export class SceneManager {
 
   dispose(): void {
     window.removeEventListener('resize', this.handleResize);
+    window.visualViewport?.removeEventListener('resize', this.handleViewportResize);
+    window.visualViewport?.removeEventListener('scroll', this.handleViewportResize);
     this.ambientObserver?.remove();
     this.ambientObserver = null;
 
@@ -186,6 +190,10 @@ export class SceneManager {
   }
 
   private handleResize = (): void => {
+    this.engine?.resize();
+  };
+
+  private handleViewportResize = (): void => {
     this.engine?.resize();
   };
 }

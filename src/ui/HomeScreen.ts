@@ -53,6 +53,7 @@ export class HomeScreen {
 
         <h1 class="home-title">SCALA</h1>
         <p class="home-tagline">Arma tu casita con dimensiones a medida</p>
+        <p class="home-orient-hint">En móvil, gira a horizontal para jugar</p>
 
         <ul class="home-tips">
           <li><span class="chip chip--wall"></span> Muros dimensionables</li>

@@ -64,6 +64,8 @@ export class MovePanel {
     const { selectedPieceId, selectedTool } = useGameStore.getState();
     const visible = selectedTool === 'select' && selectedPieceId !== null;
     this.root.classList.toggle('move-panel--hidden', !visible);
+    this.root.toggleAttribute('inert', !visible);
+    this.root.setAttribute('aria-hidden', visible ? 'false' : 'true');
 
     if (visible) {
       this.attachKeys();

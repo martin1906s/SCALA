@@ -33,12 +33,23 @@ const HUD_TOOLS: ToolMode[] = [
   'wall', 'floor', 'pillar', 'roof', 'ramp', 'delete', 'select',
 ];
 
+const TOOL_SHORT: Record<ToolMode, string> = {
+  wall: 'M',
+  floor: 'S',
+  pillar: 'C',
+  roof: 'T',
+  ramp: 'R',
+  delete: '✕',
+  select: '◎',
+};
+
 export class HUD {
   private readonly budgetEl: HTMLElement;
   private readonly toolEl: HTMLElement;
   private readonly costEl: HTMLElement;
   private readonly panelEl: HTMLElement;
   private readonly missionEl: HTMLElement;
+  private readonly missionToggleEl: HTMLButtonElement;
   private readonly missionTitleEl: HTMLElement;
   private readonly missionTaglineEl: HTMLElement;
   private readonly missionBarEl: HTMLElement;
@@ -53,6 +64,8 @@ export class HUD {
   private readonly actions: HudActions;
   private lastBudget = -1;
   private lastMissionDone = -1;
+  private lastMissionTitle = '';
+  private missionExpanded = false;
 
   constructor(root: HTMLElement, actions: HudActions) {
     this.root = root;
@@ -60,40 +73,64 @@ export class HUD {
     this.root.className = 'hud';
     this.root.innerHTML = `
       <div class="hud-mission" data-mission hidden>
-        <div class="hud-mission__header">
-          <span class="hud-mission__label">Reto activo</span>
-          <span class="hud-mission__count" data-mission-count></span>
+        <button
+          type="button"
+          class="hud-mission__toggle"
+          data-mission-toggle
+          aria-expanded="false"
+          aria-controls="hud-mission-body"
+        >
+          <span class="hud-mission__summary">
+            <span class="hud-mission__header">
+              <span class="hud-mission__label">Reto activo</span>
+              <span class="hud-mission__count" data-mission-count></span>
+            </span>
+            <span class="hud-mission__title" data-mission-title></span>
+          </span>
+          <span class="hud-mission__chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="hud-mission__body" id="hud-mission-body" data-mission-body>
+          <p class="hud-mission__tagline" data-mission-tagline></p>
+          <div class="hud-mission__bar" aria-hidden="true">
+            <span class="hud-mission__fill" data-mission-bar></span>
+          </div>
+          <ul class="hud-mission__objectives" data-mission-objectives hidden></ul>
         </div>
-        <p class="hud-mission__title" data-mission-title></p>
-        <p class="hud-mission__tagline" data-mission-tagline></p>
-        <div class="hud-mission__bar" aria-hidden="true">
-          <span class="hud-mission__fill" data-mission-bar></span>
-        </div>
-        <ul class="hud-mission__objectives" data-mission-objectives hidden></ul>
       </div>
       <div class="hud-panel" data-panel>
-        <div class="hud-row">
-          <span class="hud-label">Presupuesto</span>
-          <span class="hud-budget" data-budget></span>
+        <div class="hud-stats">
+          <div class="hud-stat hud-stat--budget">
+            <span class="hud-label">Presupuesto</span>
+            <span class="hud-budget" data-budget></span>
+          </div>
+          <div class="hud-stat hud-stat--tool">
+            <span class="hud-label">Herramienta</span>
+            <span class="hud-tool" data-tool></span>
+          </div>
+          <div class="hud-stat hud-stat--cost">
+            <span class="hud-label">Costo</span>
+            <span class="hud-cost" data-cost></span>
+          </div>
         </div>
-        <div class="hud-row">
-          <span class="hud-label">Herramienta</span>
-          <span class="hud-tool" data-tool></span>
+        <div class="hud-actions-row">
+          <div class="hud-history">
+            <button type="button" class="hud-history-btn" data-undo aria-label="Deshacer">
+              <span class="hud-history-btn__icon" aria-hidden="true">↶</span>
+              <span class="hud-history-btn__text">Deshacer</span>
+            </button>
+            <button type="button" class="hud-history-btn" data-redo aria-label="Rehacer">
+              <span class="hud-history-btn__icon" aria-hidden="true">↷</span>
+              <span class="hud-history-btn__text">Rehacer</span>
+            </button>
+          </div>
+          <div class="hud-toolbar" data-toolbar></div>
         </div>
-        <div class="hud-row hud-row--cost">
-          <span class="hud-label">Costo estimado</span>
-          <span class="hud-cost" data-cost></span>
-        </div>
-        <div class="hud-history">
-          <button type="button" class="hud-history-btn" data-undo>↶ Deshacer</button>
-          <button type="button" class="hud-history-btn" data-redo>↷ Rehacer</button>
-        </div>
-        <div class="hud-toolbar" data-toolbar></div>
         <p class="hud-hint" data-hud-hint>M = medir · 6/7 techo/rampa · Ctrl+Z historial</p>
       </div>
     `;
 
     this.missionEl = this.root.querySelector('[data-mission]')!;
+    this.missionToggleEl = this.root.querySelector('[data-mission-toggle]') as HTMLButtonElement;
     this.missionTitleEl = this.root.querySelector('[data-mission-title]')!;
     this.missionTaglineEl = this.root.querySelector('[data-mission-tagline]')!;
     this.missionBarEl = this.root.querySelector('[data-mission-bar]')!;
@@ -119,7 +156,10 @@ export class HUD {
       button.type = 'button';
       button.className = 'hud-btn';
       button.dataset.tool = tool;
-      button.textContent = TOOL_LABELS[tool];
+      button.innerHTML = `
+        <span class="hud-btn__short" aria-hidden="true">${TOOL_SHORT[tool]}</span>
+        <span class="hud-btn__label">${TOOL_LABELS[tool]}</span>
+      `;
       button.addEventListener('click', () => {
         useGameStore.getState().setTool(tool);
       });
@@ -130,6 +170,11 @@ export class HUD {
 
     blockGamePointer(this.panelEl);
     blockGamePointer(this.missionEl);
+
+    this.missionToggleEl.addEventListener('click', () => {
+      this.missionExpanded = !this.missionExpanded;
+      this.syncMissionExpanded();
+    });
 
     this.unsubscribe = useGameStore.subscribe((state) => {
       this.render(state);
@@ -171,6 +216,10 @@ export class HUD {
 
     if (state.mission) {
       this.missionEl.hidden = false;
+      if (state.mission.title !== this.lastMissionTitle) {
+        this.lastMissionTitle = state.mission.title;
+        this.missionExpanded = false;
+      }
       this.missionTitleEl.textContent = state.mission.title;
       this.missionTaglineEl.textContent = state.mission.tagline;
       this.missionCountEl.textContent = `${state.mission.done}/${state.mission.total}`;
@@ -197,10 +246,15 @@ export class HUD {
         pulseElement(this.missionEl, 'is-mission-pulse');
         this.lastMissionDone = state.mission.done;
       }
+
+      this.syncMissionExpanded();
     } else {
       this.missionEl.hidden = true;
       this.missionObjectivesEl.hidden = true;
       this.lastMissionDone = -1;
+      this.lastMissionTitle = '';
+      this.missionExpanded = false;
+      this.syncMissionExpanded();
     }
 
     this.root.classList.toggle('hud--measuring', state.measurementActive);
@@ -213,10 +267,18 @@ export class HUD {
     }
 
     this.root.classList.toggle('hud--select-active', state.selectedTool === 'select');
-    this.panelEl.classList.toggle('is-hidden', !state.uiVisibility.tools);
+    const toolsHidden = !state.uiVisibility.tools;
+    this.panelEl.classList.toggle('is-hidden', toolsHidden);
+    this.panelEl.toggleAttribute('inert', toolsHidden);
+    this.panelEl.setAttribute('aria-hidden', toolsHidden ? 'true' : 'false');
 
     this.undoBtn.classList.toggle('is-disabled', !state.canUndo);
     this.redoBtn.classList.toggle('is-disabled', !state.canRedo);
     void state.historyRevision;
+  }
+
+  private syncMissionExpanded(): void {
+    this.missionEl.classList.toggle('is-expanded', this.missionExpanded);
+    this.missionToggleEl.setAttribute('aria-expanded', String(this.missionExpanded));
   }
 }
