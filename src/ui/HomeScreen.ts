@@ -1,10 +1,11 @@
 import { attachTooltip } from '@/ui/tooltip';
+import type { GameMode } from '@/store/gameStore';
 
 export class HomeScreen {
   private readonly root: HTMLElement;
-  private readonly onStart: () => void;
+  private readonly onStart: (mode: GameMode) => void;
 
-  constructor(root: HTMLElement, onStart: () => void) {
+  constructor(root: HTMLElement, onStart: (mode: GameMode) => void) {
     this.root = root;
     this.onStart = onStart;
     this.render();
@@ -33,17 +34,22 @@ export class HomeScreen {
         </div>
 
         <h1 class="home-title">SCALA</h1>
-        <p class="home-tagline">Arma tu casita pieza por pieza</p>
+        <p class="home-tagline">Arma tu casita con dimensiones a medida</p>
 
         <ul class="home-tips">
-          <li><span class="chip chip--wall"></span> Muros</li>
-          <li><span class="chip chip--floor"></span> Suelos</li>
-          <li><span class="chip chip--pillar"></span> Columnas</li>
+          <li><span class="chip chip--wall"></span> Muros dimensionables</li>
+          <li><span class="chip chip--floor"></span> Suelos por área</li>
+          <li><span class="chip chip--pillar"></span> Columnas y tiers</li>
         </ul>
 
-        <button type="button" class="home-play" data-play>
-          ¡A construir!
-        </button>
+        <div class="home-actions">
+          <button type="button" class="home-play" data-play-campaign>
+            ¡A construir!
+          </button>
+          <button type="button" class="home-play home-play--sandbox" data-play-sandbox>
+            Modo libre
+          </button>
+        </div>
       </div>
 
       <div class="home-deco" aria-hidden="true">
@@ -53,12 +59,16 @@ export class HomeScreen {
       </div>
     `;
 
-    const playButton = this.root.querySelector<HTMLButtonElement>('[data-play]');
-    if (playButton) {
-      attachTooltip(playButton, 'Entrar al juego y empezar a construir', 'top');
-      playButton.addEventListener('click', () => {
-        this.onStart();
-      });
+    const campaignBtn = this.root.querySelector<HTMLButtonElement>('[data-play-campaign]');
+    const sandboxBtn = this.root.querySelector<HTMLButtonElement>('[data-play-sandbox]');
+
+    if (campaignBtn) {
+      attachTooltip(campaignBtn, 'Campaña con retos y presupuesto', 'top');
+      campaignBtn.addEventListener('click', () => this.onStart('campaign'));
+    }
+    if (sandboxBtn) {
+      attachTooltip(sandboxBtn, 'Construye sin límites ni objetivos', 'top');
+      sandboxBtn.addEventListener('click', () => this.onStart('sandbox'));
     }
   }
 }

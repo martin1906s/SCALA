@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "game-designer": {
+      "source": "dylantarre/animation-principles",
+      "sourceType": "github",
+      "skillPath": "skills/03-by-role-persona/game-designer/SKILL.md",
+      "computedHash": "1a9671692befb9dd664ec2ebaba1fb980d0c60157e1ddaa024dfa9d9c3cf1ff8"
+    }
+  }
+}

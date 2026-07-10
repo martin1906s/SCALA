@@ -685,3 +685,123 @@ body {
   opacity: 0;
   transform: translateY(-6px);
 }
+
+/* ── Dimension panel ── */
+#dimension-panel {
+  position: fixed;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 12;
+  max-width: 280px;
+}
+
+.dimension-panel--hidden {
+  display: none !important;
+}
+
+.dimension-panel-inner {
+  background: rgba(18, 28, 22, 0.92);
+  border: 2px solid rgba(120, 200, 140, 0.35);
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: #e8f5e9;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.dimension-title {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.dimension-tier {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.dimension-tier-btn {
+  flex: 1;
+  padding: 6px 4px;
+  font-size: 0.72rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  cursor: pointer;
+}
+
+.dimension-tier-btn.is-active {
+  background: rgba(100, 200, 120, 0.35);
+  border-color: rgba(140, 230, 160, 0.6);
+}
+
+.dimension-slider {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 8px;
+  margin-bottom: 8px;
+  font-size: 0.78rem;
+}
+
+.dimension-slider input[type="range"] {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.dimension-cost {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+  font-size: 0.78rem;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+}
+
+.dimension-warning {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  color: #ffd54f;
+}
+
+.dimension-blueprint-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.dimension-blueprint-btn {
+  font-size: 0.7rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  cursor: pointer;
+}
+
+.hud-cost--expensive {
+  color: #ff8a80;
+}
+
+.hud-budget--gain {
+  animation: hud-budget-pulse 0.45s ease;
+}
+
+#ui-layer.ui-shake {
+  animation: ui-shake 0.35s ease;
+}
+
+@keyframes ui-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(calc(-3px * var(--shake-intensity, 0.5))); }
+  40% { transform: translateX(calc(3px * var(--shake-intensity, 0.5))); }
+  60% { transform: translateX(calc(-2px * var(--shake-intensity, 0.5))); }
+  80% { transform: translateX(calc(2px * var(--shake-intensity, 0.5))); }
+}

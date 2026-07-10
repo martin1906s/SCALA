@@ -11,6 +11,12 @@ const PANELS: { id: UiPanel; label: string; tooltip: string; icon: string }[] = 
     icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm0 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg>',
   },
   {
+    id: 'dimensions',
+    label: 'Dimensiones',
+    tooltip: 'Mostrar u ocultar taller de materiales',
+    icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5h18v2H3V5zm0 6h10v2H3v-2zm0 6h14v2H3v-2zm16-8 3 3-3 3v-2h-4v-2h4V9z"/></svg>',
+  },
+  {
     id: 'rotation',
     label: 'Girar material',
     tooltip: 'Mostrar u ocultar panel para girar material',
@@ -62,6 +68,7 @@ export class UiToolbar {
   private sync(visibility: Record<UiPanel, boolean>): void {
     const labels: Record<UiPanel, string> = {
       tools: 'herramientas',
+      dimensions: 'dimensiones',
       rotation: 'girar material',
     };
 

@@ -82,7 +82,15 @@ export class MoveGizmoSystem {
       }
     });
 
-    this.unsubscribe = useGameStore.subscribe(() => this.syncFromStore());
+    this.unsubscribe = useGameStore.subscribe((state, prevState) => {
+      if (
+        state.selectedPieceId === prevState.selectedPieceId &&
+        state.selectedTool === prevState.selectedTool
+      ) {
+        return;
+      }
+      this.syncFromStore();
+    });
     this.syncFromStore();
   }
 

@@ -1,6 +1,7 @@
 import type { BuildingSystem } from '@/systems/BuildingSystem';
 import { PIECE_COLORS } from '@/config/gameConfig';
 import {
+  BUILD_PIECE_TYPES,
   PIECE_TYPE_LABELS,
   type PieceType,
 } from '@/entities/BuildingPiece';
@@ -10,7 +11,7 @@ import { attachTooltip } from '@/ui/tooltip';
 import { rgbToCss } from '@/utils/colorUtils';
 import { GameplayToast } from '@/ui/GameplayToast';
 
-const BUILD_TOOLS: PieceType[] = ['wall', 'floor', 'pillar'];
+const BUILD_TOOLS: PieceType[] = BUILD_PIECE_TYPES;
 
 export class SelectionPanel {
   private readonly root: HTMLElement;
@@ -108,8 +109,10 @@ export class SelectionPanel {
           const piece = this.buildingSystem.getPieceById(state.selectedPieceId);
           if (piece) {
             state.setTool(piece.type);
+            state.setDraftDimensions(piece.type, piece.dimensions);
+            state.setDraftMaterialTier(piece.materialTier);
             state.setPreviewRotation(piece.rotation);
-            GameplayToast.show('Tipo copiado a la herramienta activa');
+            GameplayToast.show('Tipo y dimensiones copiados');
           }
         }
         this.render();

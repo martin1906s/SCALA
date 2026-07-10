@@ -141,18 +141,29 @@ export class GridSystem {
   }
 
   isOccupied(gx: number, gz: number, gridY: number, excludeId?: string): boolean {
+    const key = cellKey(gx, gz);
     return useGameStore.getState().pieces.some(
-      (piece) =>
-        piece.id !== excludeId &&
-        piece.gridX === gx &&
-        piece.gridZ === gz &&
-        piece.gridY === gridY,
+      (piece) => {
+        if (piece.id === excludeId || piece.gridY !== gridY) {
+          return false;
+        }
+        if (piece.footprintCells?.includes(key)) {
+          return true;
+        }
+        return piece.gridX === gx && piece.gridZ === gz;
+      },
     );
   }
 
   getTopLayer(gx: number, gz: number): number {
+    const key = cellKey(gx, gz);
     const layers = useGameStore.getState().pieces
-      .filter((piece) => piece.gridX === gx && piece.gridZ === gz)
+      .filter((piece) => {
+        if (piece.footprintCells?.includes(key)) {
+          return true;
+        }
+        return piece.gridX === gx && piece.gridZ === gz;
+      })
       .map((piece) => piece.gridY);
 
     return layers.length === 0 ? -1 : Math.max(...layers);

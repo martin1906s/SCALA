@@ -1,5 +1,4 @@
-import type { ToolMode } from '@/entities/BuildingPiece';
-import { PIECE_COSTS } from '@/config/gameConfig';
+import { BUILD_PIECE_TYPES, type ToolMode } from '@/entities/BuildingPiece';
 import { useGameStore } from '@/store/gameStore';
 import { attachTooltip } from '@/ui/tooltip';
 import { blockGamePointer } from '@/utils/blockGamePointer';
@@ -14,6 +13,8 @@ const TOOL_LABELS: Record<ToolMode, string> = {
   wall: 'Muro',
   floor: 'Suelo',
   pillar: 'Columna',
+  roof: 'Techo',
+  ramp: 'Rampa',
   delete: 'Borrar',
   select: 'Seleccionar',
 };
@@ -22,19 +23,20 @@ const TOOL_TOOLTIPS: Record<ToolMode, string> = {
   wall: 'Colocar muro (tecla 1)',
   floor: 'Colocar suelo (tecla 2)',
   pillar: 'Colocar columna (tecla 3)',
+  roof: 'Colocar techo (tecla 6)',
+  ramp: 'Colocar rampa (tecla 7)',
   delete: 'Borrar pieza (tecla 4)',
   select: 'Seleccionar bloque (tecla 5)',
 };
 
-const TOOL_COST_LABELS: Partial<Record<ToolMode, string>> = {
-  wall: `${PIECE_COSTS.wall} monedas`,
-  floor: `${PIECE_COSTS.floor} monedas`,
-  pillar: `${PIECE_COSTS.pillar} monedas`,
-};
+const HUD_TOOLS: ToolMode[] = [
+  'wall', 'floor', 'pillar', 'roof', 'ramp', 'delete', 'select',
+];
 
 export class HUD {
   private readonly budgetEl: HTMLElement;
   private readonly toolEl: HTMLElement;
+  private readonly costEl: HTMLElement;
   private readonly panelEl: HTMLElement;
   private readonly missionEl: HTMLElement;
   private readonly missionTitleEl: HTMLElement;
@@ -75,12 +77,16 @@ export class HUD {
           <span class="hud-label">Herramienta</span>
           <span class="hud-tool" data-tool></span>
         </div>
+        <div class="hud-row hud-row--cost">
+          <span class="hud-label">Costo estimado</span>
+          <span class="hud-cost" data-cost></span>
+        </div>
         <div class="hud-history">
           <button type="button" class="hud-history-btn" data-undo>↶ Deshacer</button>
           <button type="button" class="hud-history-btn" data-redo>↷ Rehacer</button>
         </div>
         <div class="hud-toolbar" data-toolbar></div>
-        <p class="hud-hint">4 = borrar · 5 = seleccionar · Ctrl+Z / Ctrl+Y historial</p>
+        <p class="hud-hint">M = medir · 6/7 techo/rampa · Ctrl+Z historial</p>
       </div>
     `;
 
@@ -92,6 +98,7 @@ export class HUD {
     this.panelEl = this.root.querySelector('[data-panel]')!;
     this.budgetEl = this.root.querySelector('[data-budget]')!;
     this.toolEl = this.root.querySelector('[data-tool]')!;
+    this.costEl = this.root.querySelector('[data-cost]')!;
     this.undoBtn = this.root.querySelector('[data-undo]')!;
     this.redoBtn = this.root.querySelector('[data-redo]')!;
     const toolbar = this.root.querySelector('[data-toolbar]')!;
@@ -102,21 +109,16 @@ export class HUD {
     attachTooltip(this.redoBtn, 'Rehacer (Ctrl+Y)', 'bottom');
 
     this.toolButtons = new Map();
-    (Object.keys(TOOL_LABELS) as ToolMode[]).forEach((tool) => {
+    HUD_TOOLS.forEach((tool) => {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'hud-btn';
       button.dataset.tool = tool;
-
-      const cost = TOOL_COST_LABELS[tool];
-      button.textContent = cost ? `${TOOL_LABELS[tool]} (${cost})` : TOOL_LABELS[tool];
-
+      button.textContent = TOOL_LABELS[tool];
       button.addEventListener('click', () => {
         useGameStore.getState().setTool(tool);
       });
-
       attachTooltip(button, TOOL_TOOLTIPS[tool], 'bottom');
-
       toolbar.appendChild(button);
       this.toolButtons.set(tool, button);
     });
@@ -131,6 +133,10 @@ export class HUD {
     this.render(useGameStore.getState());
   }
 
+  getBudgetElement(): HTMLElement {
+    return this.budgetEl;
+  }
+
   refreshHistory(): void {
     this.render(useGameStore.getState());
   }
@@ -143,8 +149,15 @@ export class HUD {
   }
 
   private render(state: ReturnType<typeof useGameStore.getState>): void {
-    this.budgetEl.textContent = `${state.budget} monedas`;
+    const isSandbox = state.gameMode === 'sandbox';
+    this.budgetEl.textContent = isSandbox ? '∞ libre' : `${state.budget} monedas`;
     this.toolEl.textContent = TOOL_LABELS[state.selectedTool];
+
+    const canAfford = isSandbox || state.budget >= state.estimatedCost;
+    this.costEl.textContent = BUILD_PIECE_TYPES.includes(state.selectedTool as typeof BUILD_PIECE_TYPES[number])
+      ? (isSandbox ? 'Gratis' : `${state.estimatedCost} monedas`)
+      : '—';
+    this.costEl.classList.toggle('hud-cost--expensive', !canAfford && !isSandbox);
 
     if (state.budget !== this.lastBudget) {
       pulseElement(this.budgetEl);

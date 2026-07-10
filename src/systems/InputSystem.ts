@@ -15,9 +15,11 @@ const TOOL_SHORTCUTS: Record<string, ToolMode> = {
   '3': 'pillar',
   '4': 'delete',
   '5': 'select',
+  '6': 'roof',
+  '7': 'ramp',
 };
 
-const BUILD_TOOLS: PieceType[] = ['wall', 'floor', 'pillar'];
+const BUILD_TOOLS: PieceType[] = ['wall', 'floor', 'pillar', 'roof', 'ramp'];
 
 const HOVER_COLORS = {
   default: Color3.FromHexString('#5BC8FF'),
@@ -40,6 +42,7 @@ export class InputSystem {
   private readonly moveGizmo: MoveGizmoSystem;
   private readonly piecePicker: PiecePicker;
   private lastPointerCoords: { x: number; y: number } | null = null;
+  private measureStart: { x: number; z: number } | null = null;
 
   constructor(
     scene: Scene,
@@ -209,6 +212,11 @@ export class InputSystem {
       return;
     }
 
+    if (useGameStore.getState().measurementActive) {
+      this.handleMeasureClick(event);
+      return;
+    }
+
     const { selectedTool } = state;
 
     if (selectedTool === 'select') {
@@ -267,6 +275,26 @@ export class InputSystem {
     }
   }
 
+  private handleMeasureClick(event: PointerEvent): void {
+    const ground = this.getGroundPointUnderCursor(event);
+    if (!ground) {
+      return;
+    }
+
+    if (!this.measureStart) {
+      this.measureStart = { x: ground.x, z: ground.z };
+      GameplayToast.show('Punto A marcado. Clic en B para medir.');
+      return;
+    }
+
+    const dx = ground.x - this.measureStart.x;
+    const dz = ground.z - this.measureStart.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+    const area = Math.abs(dx * dz);
+    GameplayToast.show(`Distancia: ${dist.toFixed(2)} m · Área aprox: ${area.toFixed(2)} m²`);
+    this.measureStart = null;
+  }
+
   private handlePointerMove(event: PointerEvent, pickInfo?: PickingInfo | null): void {
     const state = useGameStore.getState();
     const { selectedTool } = state;
@@ -294,6 +322,14 @@ export class InputSystem {
       target.gz,
       target.gridY,
     );
+
+    const warning = this.buildingSystem.getStructuralWarning(
+      selectedTool as PieceType,
+      target.gx,
+      target.gz,
+      target.gridY,
+    );
+    void warning;
   }
 
   private handlePointerLeave = (): void => {
@@ -344,6 +380,15 @@ export class InputSystem {
       return;
     }
 
+    if (event.key.toLowerCase() === 'm') {
+      event.preventDefault();
+      const next = !store.measurementActive;
+      store.setMeasurementActive(next);
+      this.measureStart = null;
+      GameplayToast.show(next ? 'Modo medición: clic A y B' : 'Modo medición desactivado');
+      return;
+    }
+
     if (store.selectedPieceId) {
       switch (event.key.toLowerCase()) {
         case 'd':
@@ -367,8 +412,10 @@ export class InputSystem {
           const piece = this.buildingSystem.getPieceById(store.selectedPieceId);
           if (piece) {
             store.setTool(piece.type);
+            store.setDraftDimensions(piece.type, piece.dimensions);
+            store.setDraftMaterialTier(piece.materialTier);
             store.setPreviewRotation(piece.rotation);
-            GameplayToast.show('Tipo copiado a la herramienta activa');
+            GameplayToast.show('Tipo y dimensiones copiados');
           }
           return;
         }

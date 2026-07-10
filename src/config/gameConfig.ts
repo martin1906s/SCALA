@@ -25,6 +25,8 @@ export const PIECE_COLORS = {
   wall: { r: 0.92, g: 0.48, b: 0.38 },
   floor: { r: 0.78, g: 0.58, b: 0.32 },
   pillar: { r: 0.52, g: 0.72, b: 0.95 },
+  roof: { r: 0.65, g: 0.35, b: 0.28 },
+  ramp: { r: 0.7, g: 0.55, b: 0.38 },
 } as const;
 
 export const CAMERA = {

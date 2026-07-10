@@ -1,4 +1,7 @@
-export type PieceType = 'wall' | 'floor' | 'pillar';
+import type { MaterialTier } from '@/config/materialCatalog';
+import type { MaterialDimensions } from '@/domain/materials/MaterialDimensions';
+
+export type PieceType = 'wall' | 'floor' | 'pillar' | 'roof' | 'ramp';
 export type ToolMode = PieceType | 'delete' | 'select';
 
 export interface PieceRotation {
@@ -16,6 +19,9 @@ export interface RgbColor {
 export interface BuildingPiece {
   id: string;
   type: PieceType;
+  dimensions: MaterialDimensions;
+  materialTier: MaterialTier;
+  costPaid: number;
   gridX: number;
   gridZ: number;
   gridY: number;
@@ -26,8 +32,18 @@ export interface BuildingPiece {
   mesh: import('@babylonjs/core').AbstractMesh;
   customColor?: RgbColor;
   customMaterial?: import('@babylonjs/core').StandardMaterial;
+  /** Celdas ocupadas en plano XZ (cache). */
+  footprintCells?: string[];
 }
 
+let pieceCounter = 0;
+
+export function generatePieceId(): string {
+  pieceCounter += 1;
+  return `piece-${pieceCounter}-${Date.now().toString(36)}`;
+}
+
+/** @deprecated Usar generatePieceId. Mantenido para migración. */
 export function pieceId(gridX: number, gridZ: number, gridY: number): string {
   return `${gridX},${gridZ},${gridY}`;
 }
@@ -38,7 +54,11 @@ export const PIECE_TYPE_LABELS: Record<PieceType, string> = {
   wall: 'Muro',
   floor: 'Suelo',
   pillar: 'Columna',
+  roof: 'Techo',
+  ramp: 'Rampa',
 };
+
+export const BUILD_PIECE_TYPES: PieceType[] = ['wall', 'floor', 'pillar', 'roof', 'ramp'];
 
 export function cloneRotation(rotation: PieceRotation): PieceRotation {
   return { x: rotation.x, y: rotation.y, z: rotation.z };

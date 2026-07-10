@@ -4,6 +4,8 @@ import type { BuildingPiece } from '@/entities/BuildingPiece';
 import type { CameraController } from '@/core/CameraController';
 import type { BuildingSystem } from '@/systems/BuildingSystem';
 import type { GridSystem } from '@/systems/GridSystem';
+import type { JuiceSystem } from '@/systems/JuiceSystem';
+import type { GameMode } from '@/store/gameStore';
 import { computeStars, evaluateObjectives } from '@/systems/objectiveEvaluator';
 import { useGameStore } from '@/store/gameStore';
 import type { DialogueBox } from '@/ui/DialogueBox';
@@ -14,13 +16,16 @@ interface LevelManagerDeps {
   camera: CameraController;
   building: BuildingSystem;
   grid: GridSystem;
+  juice: JuiceSystem;
+  gameMode: GameMode;
 }
 
 export class LevelManager {
   private readonly dialogue: DialogueBox;
-  private readonly camera: CameraController;
   private readonly building: BuildingSystem;
   private readonly grid: GridSystem;
+  private readonly juice: JuiceSystem;
+  private readonly gameMode: GameMode;
   private levelIndex = 0;
   private level: LevelDefinition;
   private unsubscribe: (() => void) | null = null;
@@ -30,15 +35,34 @@ export class LevelManager {
 
   constructor(dialogue: DialogueBox, deps: LevelManagerDeps) {
     this.dialogue = dialogue;
-    this.camera = deps.camera;
     this.building = deps.building;
     this.grid = deps.grid;
+    this.juice = deps.juice;
+    this.gameMode = deps.gameMode;
     this.level = LEVELS[0]!;
   }
 
   async start(): Promise<void> {
     if (this.started) return;
     this.started = true;
+
+    if (this.gameMode === 'sandbox') {
+      this.grid.applyLevelLayout(1);
+      useGameStore.getState().setBudget(999_999);
+      useGameStore.getState().setMission(null);
+      await this.dialogue.playLines(
+        'intro',
+        'Modo libre',
+        [
+          'Bienvenido al taller sin límites del gremio SCALA.',
+          'Ajusta dimensiones, elige materiales y construye a tu gusto.',
+          'Teclas 1–7 herramientas · M para medir · plantillas en el panel derecho.',
+        ],
+        'Sandbox · Sin restricciones',
+      );
+      return;
+    }
+
     this.completedObjectiveIds.clear();
     this.grid.applyLevelLayout(this.level.id);
 
@@ -54,7 +78,10 @@ export class LevelManager {
     await this.dialogue.playLines('intro', this.level.name, this.level.intro, this.level.tagline);
 
     this.dialogue.showObjectives(this.level.name, this.level.tagline, this.computeProgress([]));
-    this.unsubscribe = useGameStore.subscribe((state) => {
+    this.unsubscribe = useGameStore.subscribe((state, prevState) => {
+      if (state.pieces === prevState.pieces && state.budget === prevState.budget) {
+        return;
+      }
       this.onGameStateChanged(state.pieces, state.budget);
     });
     this.onGameStateChanged(store.pieces, store.budget);
@@ -71,7 +98,7 @@ export class LevelManager {
   }
 
   private onGameStateChanged(pieces: BuildingPiece[], budget: number): void {
-    if (this.completed) return;
+    if (this.completed || this.gameMode === 'sandbox') return;
 
     const progress = this.computeProgress(pieces, budget);
     this.dialogue.updateObjectives(progress);
@@ -82,7 +109,7 @@ export class LevelManager {
         this.completedObjectiveIds.add(objective.id);
         ObjectiveToast.show(`¡Reto cumplido! ${objective.text}`);
         Confetti.burst('normal');
-        this.camera.celebrate('objective');
+        this.juice.onObjectiveComplete('objective');
       }
     }
 
@@ -93,11 +120,22 @@ export class LevelManager {
 
   private syncMission(progress: ReturnType<typeof this.computeProgress>): void {
     const done = progress.filter((obj) => obj.done).length;
+    const total = progress.length;
+    const current = useGameStore.getState().mission;
+    if (
+      current &&
+      current.done === done &&
+      current.total === total &&
+      current.title === this.level.name &&
+      current.tagline === this.level.tagline
+    ) {
+      return;
+    }
     useGameStore.getState().setMission({
       title: this.level.name,
       tagline: this.level.tagline,
       done,
-      total: progress.length,
+      total,
     });
   }
 
@@ -107,6 +145,7 @@ export class LevelManager {
       pieces,
       budget,
       (gx, gz) => this.grid.isBlockedForBuilding(gx, gz),
+      this.level.budget,
     ).map((result) => ({
       id: result.id,
       text: result.text,
@@ -122,9 +161,10 @@ export class LevelManager {
     this.unsubscribe?.();
     this.unsubscribe = null;
 
+    useGameStore.getState().setCompletedLevel(this.level.id);
     const stars = computeStars(true, budget, this.level.budget);
     Confetti.burst('epic');
-    this.camera.celebrate('victory');
+    this.juice.onObjectiveComplete('victory');
 
     await this.dialogue.playLines(
       'victory',

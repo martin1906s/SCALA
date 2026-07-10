@@ -1,17 +1,24 @@
 import { CameraController } from '@/core/CameraController';
 import { SceneManager } from '@/core/SceneManager';
 import { BuildingSystem } from '@/systems/BuildingSystem';
+import { CollisionSystem } from '@/systems/CollisionSystem';
 import { EconomySystem } from '@/systems/EconomySystem';
 import { GridSystem } from '@/systems/GridSystem';
 import { InputSystem } from '@/systems/InputSystem';
+import { JuiceSystem } from '@/systems/JuiceSystem';
 import { LevelManager } from '@/systems/LevelManager';
+import { MeshFactory } from '@/systems/MeshFactory';
 import { MoveGizmoSystem } from '@/systems/MoveGizmoSystem';
+import { StructuralIntegritySystem } from '@/systems/StructuralIntegritySystem';
 import { DialogueBox } from '@/ui/DialogueBox';
+import { DimensionPanel } from '@/ui/DimensionPanel';
 import { HUD } from '@/ui/HUD';
 import { MovePanel } from '@/ui/MovePanel';
 import { SelectionPanel } from '@/ui/SelectionPanel';
 import { UiToolbar } from '@/ui/UiToolbar';
 import { GameplayToast } from '@/ui/GameplayToast';
+import type { GameMode } from '@/store/gameStore';
+import { useGameStore } from '@/store/gameStore';
 
 export class Game {
   private sceneManager: SceneManager | null = null;
@@ -23,6 +30,7 @@ export class Game {
   private moveGizmo: MoveGizmoSystem | null = null;
   private hud: HUD | null = null;
   private selectionPanel: SelectionPanel | null = null;
+  private dimensionPanel: DimensionPanel | null = null;
   private movePanel: MovePanel | null = null;
   private uiToolbar: UiToolbar | null = null;
   private dialogueBox: DialogueBox | null = null;
@@ -31,24 +39,30 @@ export class Game {
   private readonly canvas: HTMLCanvasElement;
   private readonly hudRoot: HTMLElement;
   private readonly selectionRoot: HTMLElement;
+  private readonly dimensionRoot: HTMLElement;
   private readonly moveRoot: HTMLElement;
   private readonly toolbarRoot: HTMLElement;
   private readonly dialogueRoot: HTMLElement;
+  private readonly gameMode: GameMode;
 
   constructor(
     canvas: HTMLCanvasElement,
     hudRoot: HTMLElement,
     selectionRoot: HTMLElement,
+    dimensionRoot: HTMLElement,
     moveRoot: HTMLElement,
     toolbarRoot: HTMLElement,
     dialogueRoot: HTMLElement,
+    gameMode: GameMode = 'campaign',
   ) {
     this.canvas = canvas;
     this.hudRoot = hudRoot;
     this.selectionRoot = selectionRoot;
+    this.dimensionRoot = dimensionRoot;
     this.moveRoot = moveRoot;
     this.toolbarRoot = toolbarRoot;
     this.dialogueRoot = dialogueRoot;
+    this.gameMode = gameMode;
   }
 
   start(): void {
@@ -57,6 +71,10 @@ export class Game {
     }
 
     this.started = true;
+    useGameStore.getState().setGameMode(this.gameMode);
+    if (this.gameMode === 'sandbox') {
+      useGameStore.getState().setBudget(999_999);
+    }
 
     this.sceneManager = new SceneManager();
     const scene = this.sceneManager.init(this.canvas);
@@ -64,10 +82,19 @@ export class Game {
     this.cameraController = new CameraController(scene, this.canvas);
     this.gridSystem = new GridSystem(scene);
     this.economySystem = new EconomySystem();
+    const collisionSystem = new CollisionSystem(this.gridSystem);
+    const meshFactory = new MeshFactory(scene, this.gridSystem);
+    const juiceSystem = new JuiceSystem(scene, this.cameraController);
+    const integritySystem = new StructuralIntegritySystem(collisionSystem);
+
     this.buildingSystem = new BuildingSystem(
       scene,
       this.gridSystem,
       this.economySystem,
+      collisionSystem,
+      meshFactory,
+      juiceSystem,
+      integritySystem,
     );
 
     this.moveGizmo = new MoveGizmoSystem(scene, this.gridSystem, this.buildingSystem);
@@ -91,6 +118,10 @@ export class Game {
       this.buildingSystem,
       () => this.inputSystem?.refreshPreviewIfBuilding(),
     );
+    this.dimensionPanel = new DimensionPanel(
+      this.dimensionRoot,
+      () => this.inputSystem?.refreshPreviewIfBuilding(),
+    );
     this.movePanel = new MovePanel(this.moveRoot, this.moveGizmo);
     this.uiToolbar = new UiToolbar(this.toolbarRoot);
 
@@ -99,6 +130,8 @@ export class Game {
       camera: this.cameraController,
       building: this.buildingSystem,
       grid: this.gridSystem,
+      juice: juiceSystem,
+      gameMode: this.gameMode,
     });
     void this.levelManager.start();
 
@@ -129,6 +162,9 @@ export class Game {
 
     this.moveGizmo?.dispose();
     this.moveGizmo = null;
+
+    this.dimensionPanel?.dispose();
+    this.dimensionPanel = null;
 
     this.selectionPanel?.dispose();
     this.selectionPanel = null;

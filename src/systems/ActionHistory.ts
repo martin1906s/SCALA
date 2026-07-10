@@ -1,5 +1,8 @@
+import type { MaterialTier } from '@/config/materialCatalog';
+import type { MaterialDimensions } from '@/domain/materials/MaterialDimensions';
 import type { BuildingPiece, PieceRotation, PieceType } from '@/entities/BuildingPiece';
 import { cloneRotation } from '@/entities/BuildingPiece';
+import { cloneDimensions } from '@/domain/materials/MaterialDimensions';
 
 export type HistoryAction =
   | {
@@ -32,12 +35,16 @@ export interface PiecePosition {
 export interface PieceSnapshot {
   id: string;
   type: PieceType;
+  dimensions: MaterialDimensions;
+  materialTier: MaterialTier;
+  costPaid: number;
   gridX: number;
   gridZ: number;
   gridY: number;
   offsetX: number;
   offsetZ: number;
   rotation: PieceRotation;
+  footprintCells?: string[];
 }
 
 export class ActionHistory {
@@ -90,12 +97,16 @@ export function snapshotFromPiece(piece: BuildingPiece): PieceSnapshot {
   return {
     id: piece.id,
     type: piece.type,
+    dimensions: cloneDimensions(piece.dimensions),
+    materialTier: piece.materialTier,
+    costPaid: piece.costPaid,
     gridX: piece.gridX,
     gridZ: piece.gridZ,
     gridY: piece.gridY,
     offsetX: piece.offsetX ?? 0,
     offsetZ: piece.offsetZ ?? 0,
     rotation: cloneRotation(piece.rotation),
+    footprintCells: piece.footprintCells ? [...piece.footprintCells] : undefined,
   };
 }
 

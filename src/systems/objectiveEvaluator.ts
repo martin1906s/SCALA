@@ -1,5 +1,7 @@
 import type { LevelObjective } from '@/config/levels';
 import type { BuildingPiece } from '@/entities/BuildingPiece';
+import { getVisibleArea } from '@/config/materialCatalog';
+import { getFootprintFromPiece } from '@/domain/structures/Footprint';
 
 export interface ObjectiveResult {
   id: string;
@@ -24,29 +26,66 @@ function maxStackHeight(pieces: BuildingPiece[]): number {
   return Math.max(...pieces.map((piece) => piece.gridY)) + 1;
 }
 
+function pieceTouchesRoad(piece: BuildingPiece, isBlockedCell: (gx: number, gz: number) => boolean): boolean {
+  const cells = piece.footprintCells ?? getFootprintFromPiece(piece);
+  return cells.some((key) => {
+    const [gx, gz] = key.split(',').map(Number) as [number, number];
+    return isBlockedCell(gx, gz);
+  });
+}
+
+function totalFloorArea(pieces: BuildingPiece[]): number {
+  return pieces
+    .filter((p) => p.type === 'floor' || p.type === 'roof')
+    .reduce((sum, p) => sum + getVisibleArea(p.type, p.dimensions), 0);
+}
+
+function maxBridgeSpan(pieces: BuildingPiece[], isBlockedCell: (gx: number, gz: number) => boolean): number {
+  let best = 0;
+  for (const piece of pieces) {
+    if (piece.type !== 'floor' || piece.gridY < 1) {
+      continue;
+    }
+    const cells = piece.footprintCells ?? getFootprintFromPiece(piece);
+    const roadCells = cells.filter((key) => {
+      const [gx, gz] = key.split(',').map(Number) as [number, number];
+      return isBlockedCell(gx, gz);
+    });
+    if (roadCells.length > 0) {
+      best = Math.max(best, roadCells.length);
+    }
+  }
+  return best;
+}
+
 function maxEnclosureWalls(pieces: BuildingPiece[]): number {
   const floors = pieces.filter((piece) => piece.type === 'floor');
   let best = 0;
 
   for (const floor of floors) {
-    const neighbors = [
-      { gx: floor.gridX - 1, gz: floor.gridZ },
-      { gx: floor.gridX + 1, gz: floor.gridZ },
-      { gx: floor.gridX, gz: floor.gridZ - 1 },
-      { gx: floor.gridX, gz: floor.gridZ + 1 },
-    ];
-
-    const wallsAround = neighbors.filter(({ gx, gz }) =>
-      pieces.some(
-        (piece) =>
-          piece.type === 'wall' &&
-          piece.gridX === gx &&
-          piece.gridZ === gz &&
-          piece.gridY === floor.gridY,
-      ),
-    ).length;
-
-    best = Math.max(best, wallsAround);
+    const footprint = floor.footprintCells ?? getFootprintFromPiece(floor);
+    let wallsAround = 0;
+    for (const key of footprint) {
+      const [gx, gz] = key.split(',').map(Number) as [number, number];
+      const neighbors = [
+        { gx: gx - 1, gz },
+        { gx: gx + 1, gz },
+        { gx, gz: gz - 1 },
+        { gx, gz: gz + 1 },
+      ];
+      for (const { gx: nx, gz: nz } of neighbors) {
+        if (pieces.some(
+          (piece) =>
+            piece.type === 'wall' &&
+            piece.gridY === floor.gridY &&
+            (piece.footprintCells?.includes(`${nx},${nz}`)
+              || (piece.gridX === nx && piece.gridZ === nz)),
+        )) {
+          wallsAround += 1;
+        }
+      }
+    }
+    best = Math.max(best, Math.min(4, wallsAround));
   }
 
   return best;
@@ -57,6 +96,7 @@ export function evaluateObjectives(
   pieces: BuildingPiece[],
   budget: number,
   isBlockedCell: (gx: number, gz: number) => boolean = () => false,
+  startBudget = 1000,
 ): ObjectiveResult[] {
   return objectives.map((objective) => {
     switch (objective.kind) {
@@ -107,6 +147,58 @@ export function evaluateObjectives(
           progressLabel: `${budget}/${target} 💰`,
         };
       }
+      case 'budgetEfficiency': {
+        const minPct = objective.minBudget ?? 20;
+        const currentPct = startBudget > 0 ? Math.round((budget / startBudget) * 100) : 0;
+        return {
+          id: objective.id,
+          text: objective.text,
+          current: currentPct,
+          target: minPct,
+          done: currentPct >= minPct,
+          progressLabel: `${currentPct}% restante`,
+        };
+      }
+      case 'minArea': {
+        const current = Math.floor(totalFloorArea(pieces));
+        const target = objective.count ?? 4;
+        return {
+          id: objective.id,
+          text: objective.text,
+          current,
+          target,
+          done: current >= target,
+          progressLabel: `${Math.min(current, target)}/${target} m²`,
+        };
+      }
+      case 'minSpan': {
+        const current = maxBridgeSpan(pieces, isBlockedCell);
+        const target = objective.count ?? 4;
+        return {
+          id: objective.id,
+          text: objective.text,
+          current,
+          target,
+          done: current >= target,
+          progressLabel: `${Math.min(current, target)}/${target} celdas`,
+        };
+      }
+      case 'tierCount': {
+        const minTier = objective.pieceType === 'pillar' ? 'stone' : 'stone';
+        const tiers = { wood: 0, stone: 1, marble: 2 };
+        const current = pieces.filter(
+          (p) => tiers[p.materialTier] >= tiers[minTier as keyof typeof tiers],
+        ).length;
+        const target = objective.count ?? 2;
+        return {
+          id: objective.id,
+          text: objective.text,
+          current,
+          target,
+          done: current >= target,
+          progressLabel: `${Math.min(current, target)}/${target}`,
+        };
+      }
       case 'enclosure': {
         const current = maxEnclosureWalls(pieces);
         const target = objective.count ?? 4;
@@ -121,7 +213,7 @@ export function evaluateObjectives(
       }
       case 'roadClear': {
         const violations = pieces.filter(
-          (piece) => isBlockedCell(piece.gridX, piece.gridZ) && piece.gridY === 0,
+          (piece) => piece.gridY === 0 && pieceTouchesRoad(piece, isBlockedCell),
         ).length;
         return {
           id: objective.id,
@@ -133,12 +225,7 @@ export function evaluateObjectives(
         };
       }
       case 'bridge': {
-        const current = pieces.filter(
-          (piece) =>
-            piece.type === 'floor' &&
-            piece.gridY >= 1 &&
-            isBlockedCell(piece.gridX, piece.gridZ),
-        ).length;
+        const current = maxBridgeSpan(pieces, isBlockedCell);
         const target = objective.count ?? 4;
         return {
           id: objective.id,

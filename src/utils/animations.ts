@@ -30,3 +30,31 @@ export function pulseElement(element: HTMLElement, className = 'is-pulsing'): vo
   void element.offsetWidth;
   element.classList.add(className);
 }
+
+export function easeOutCubic(t: number): number {
+  return 1 - (1 - t) ** 3;
+}
+
+export function animateCounter(element: HTMLElement, target: number, durationMs = 280): void {
+  if (prefersReducedMotion()) {
+    element.textContent = String(target);
+    return;
+  }
+
+  const start = Number(element.textContent) || 0;
+  if (start === target) {
+    element.textContent = String(target);
+    return;
+  }
+
+  const startTime = performance.now();
+  const tick = (): void => {
+    const t = Math.min(1, (performance.now() - startTime) / durationMs);
+    const value = Math.round(start + (target - start) * easeOutCubic(t));
+    element.textContent = String(value);
+    if (t < 1) {
+      requestAnimationFrame(tick);
+    }
+  };
+  requestAnimationFrame(tick);
+}

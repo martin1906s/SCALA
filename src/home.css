@@ -177,6 +177,20 @@
   transform: translateY(-2px);
 }
 
+.home-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.home-play--sandbox {
+  background: linear-gradient(180deg, #5a8f6e 0%, #3d6b4f 100%);
+  box-shadow: 0 6px 20px rgba(61, 107, 79, 0.35);
+  font-size: 1rem;
+  padding: 12px 36px;
+}
+
 .home-play:active {
   transform: translateY(3px);
   border-bottom-width: 2px;
