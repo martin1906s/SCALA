@@ -220,12 +220,6 @@ export class InputSystem {
     const { selectedTool } = state;
 
     if (selectedTool === 'select') {
-      const clickedPiece = this.pickBuildingPiece(event, pickInfo);
-      if (clickedPiece) {
-        this.selectPiece(clickedPiece.id);
-        return;
-      }
-
       const { x, y } = this.pointerCoords(event);
       const gizmoPick = this.scene.pick(
         x,
@@ -233,6 +227,20 @@ export class InputSystem {
         (mesh) => this.moveGizmo.isGizmoMesh(mesh),
       );
       if (gizmoPick.hit) {
+        return;
+      }
+
+      const clickedPiece = this.pickBuildingPiece(event, pickInfo);
+      if (clickedPiece) {
+        this.selectPiece(clickedPiece.id);
+        const ground = this.getGroundPointUnderCursor(event);
+        if (ground) {
+          this.moveGizmo.startPieceDrag(clickedPiece.id, ground.x, ground.z);
+        }
+        return;
+      }
+
+      if (this.moveGizmo.isDragging()) {
         return;
       }
 
@@ -302,6 +310,13 @@ export class InputSystem {
     this.updateHover(hovered?.id ?? null);
 
     if (selectedTool === 'select' || selectedTool === 'delete') {
+      if (selectedTool === 'select' && this.moveGizmo.isDragging()) {
+        const ground = this.getGroundPointUnderCursor(event);
+        if (ground) {
+          this.moveGizmo.updatePieceDrag(ground.x, ground.z);
+        }
+        return;
+      }
       this.buildingSystem.hidePreview();
       return;
     }

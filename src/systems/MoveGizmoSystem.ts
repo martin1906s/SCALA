@@ -151,6 +151,9 @@ export class MoveGizmoSystem {
   }
 
   endPieceDrag(): boolean {
+    if (!this.dragging) {
+      return false;
+    }
     return this.endDrag();
   }
 

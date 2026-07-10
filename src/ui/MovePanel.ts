@@ -34,7 +34,7 @@ export class MovePanel {
           <button type="button" class="move-btn move-btn--right" data-move="right" aria-label="Mover derecha">▶</button>
           <button type="button" class="move-btn move-btn--down" data-move="down" aria-label="Mover abajo">▼</button>
         </div>
-        <p class="move-panel-hint">Arrastra el cubo naranja · Flechas: 0,001 u</p>
+        <p class="move-panel-hint">Arrastra la pieza o el cubo naranja · Flechas: 0,001 u</p>
       </div>
     `;
 
