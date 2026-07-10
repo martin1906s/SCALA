@@ -34,6 +34,7 @@ import {
 import type { CollisionSystem, PlacementCandidate } from '@/systems/CollisionSystem';
 import type { EconomySystem } from '@/systems/EconomySystem';
 import type { GridSystem } from '@/systems/GridSystem';
+import { roundPosition } from '@/systems/GridSystem';
 import type { JuiceSystem } from '@/systems/JuiceSystem';
 import type { MeshFactory } from '@/systems/MeshFactory';
 import type { StructuralIntegritySystem } from '@/systems/StructuralIntegritySystem';
@@ -302,6 +303,34 @@ export class BuildingSystem {
     return this.integritySystem.checkPlacement(candidate)?.message ?? null;
   }
 
+  canMovePieceToWorld(id: string, worldX: number, worldZ: number): boolean {
+    const piece = this.pieceMap.get(id);
+    if (!piece) {
+      return false;
+    }
+
+    const roundedX = roundPosition(worldX);
+    const roundedZ = roundPosition(worldZ);
+    if (!this.gridSystem.isWorldInBounds(roundedX, roundedZ)) {
+      return false;
+    }
+
+    const anchor = this.gridSystem.worldToPieceAnchor(roundedX, roundedZ);
+    const candidate = this.buildCandidate(
+      piece.type,
+      anchor.gridX,
+      anchor.gridZ,
+      piece.gridY,
+      piece.dimensions,
+      piece.materialTier,
+      piece.rotation.y,
+      anchor.offsetX,
+      anchor.offsetZ,
+    );
+
+    return this.collisionSystem.canMove(candidate, id);
+  }
+
   movePiece(id: string, deltaX: number, deltaZ: number): boolean {
     const piece = this.pieceMap.get(id);
     if (!piece) {
@@ -344,8 +373,8 @@ export class BuildingSystem {
       return false;
     }
 
-    const roundedX = Math.round(worldX * 1000) / 1000;
-    const roundedZ = Math.round(worldZ * 1000) / 1000;
+    const roundedX = roundPosition(worldX);
+    const roundedZ = roundPosition(worldZ);
 
     if (!this.gridSystem.isWorldInBounds(roundedX, roundedZ)) {
       return false;
@@ -364,7 +393,7 @@ export class BuildingSystem {
       anchor.offsetZ,
     );
 
-    if (!this.collisionSystem.canPlace(candidate, id)) {
+    if (!this.collisionSystem.canMove(candidate, id)) {
       return false;
     }
 
@@ -412,8 +441,8 @@ export class BuildingSystem {
       return false;
     }
 
-    const roundedX = Math.round(worldX * 1000) / 1000;
-    const roundedZ = Math.round(worldZ * 1000) / 1000;
+    const roundedX = roundPosition(worldX);
+    const roundedZ = roundPosition(worldZ);
     if (!this.gridSystem.isWorldInBounds(roundedX, roundedZ)) {
       return false;
     }

@@ -87,6 +87,30 @@ export class CollisionSystem {
     return true;
   }
 
+  canMove(candidate: PlacementCandidate, excludeId?: string): boolean {
+    const cells = this.getFootprintCells({
+      gridX: candidate.gridX,
+      gridZ: candidate.gridZ,
+      gridY: candidate.gridY,
+      type: candidate.type,
+      dimensions: candidate.dimensions,
+      rotationY: candidate.rotationY,
+      offsetX: candidate.offsetX,
+      offsetZ: candidate.offsetZ,
+    });
+
+    if (!this.allCellsInBounds(cells)) {
+      return false;
+    }
+    if (this.anyCellBlockedOnGround(cells, candidate.gridY)) {
+      return false;
+    }
+    if (this.footprintOverlaps(cells, candidate.gridY, excludeId)) {
+      return false;
+    }
+    return true;
+  }
+
   canPlace(candidate: PlacementCandidate, excludeId?: string): boolean {
     const cells = this.getFootprintCells({
       gridX: candidate.gridX,

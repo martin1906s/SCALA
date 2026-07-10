@@ -11,6 +11,7 @@ import type { GridSystem } from '@/systems/GridSystem';
 import { roundPosition } from '@/systems/GridSystem';
 import { useGameStore } from '@/store/gameStore';
 import { GameplayToast } from '@/ui/GameplayToast';
+import { pickGroundPlane } from '@/utils/pointerCoords';
 
 export class MoveGizmoSystem {
   private readonly scene: Scene;
@@ -24,6 +25,8 @@ export class MoveGizmoSystem {
   private targetWorldZ = 0;
   private originWorldX = 0;
   private originWorldZ = 0;
+  private dragOffsetX = 0;
+  private dragOffsetZ = 0;
   private dragging = false;
   private pointerObserver: { remove: () => void } | null = null;
 
@@ -61,20 +64,17 @@ export class MoveGizmoSystem {
       switch (pointerInfo.type) {
         case PointerEventTypes.POINTERDOWN:
           if (pointerInfo.pickInfo?.pickedMesh === this.gizmoMesh) {
-            this.dragging = true;
-            this.originWorldX = this.targetWorldX;
-            this.originWorldZ = this.targetWorldZ;
+            this.beginDrag(this.targetWorldX, this.targetWorldZ);
           }
           break;
         case PointerEventTypes.POINTERMOVE:
           if (this.dragging) {
-            this.updateTargetFromPointer();
+            this.updateDragFromPointer();
           }
           break;
         case PointerEventTypes.POINTERUP:
           if (this.dragging) {
-            this.dragging = false;
-            this.commitMove();
+            this.endDrag();
           }
           break;
         default:
@@ -108,6 +108,10 @@ export class MoveGizmoSystem {
     return mesh === this.gizmoMesh;
   }
 
+  isDragging(): boolean {
+    return this.dragging;
+  }
+
   moveBy(deltaX: number, deltaZ: number): boolean {
     if (!this.activePieceId) {
       return false;
@@ -117,6 +121,54 @@ export class MoveGizmoSystem {
       this.targetWorldZ + deltaZ,
       true,
     );
+  }
+
+  /** Arrastrar la pieza desde un clic sobre su mesh. */
+  startPieceDrag(pieceId: string, groundX: number, groundZ: number): void {
+    const piece = this.buildingSystem.getPieceById(pieceId);
+    if (!piece) {
+      return;
+    }
+
+    this.activePieceId = pieceId;
+    this.gizmoMesh.setEnabled(true);
+
+    const world = this.buildingSystem.getPieceWorldPosition(piece);
+    this.targetWorldX = world.x;
+    this.targetWorldZ = world.z;
+    this.dragOffsetX = world.x - groundX;
+    this.dragOffsetZ = world.z - groundZ;
+    this.beginDrag(world.x, world.z);
+    this.previewAt(this.targetWorldX, this.targetWorldZ);
+    this.refreshVisuals();
+  }
+
+  updatePieceDrag(groundX: number, groundZ: number): void {
+    if (!this.dragging || !this.activePieceId) {
+      return;
+    }
+    this.setTarget(groundX + this.dragOffsetX, groundZ + this.dragOffsetZ, false);
+  }
+
+  endPieceDrag(): boolean {
+    return this.endDrag();
+  }
+
+  private beginDrag(originX: number, originZ: number): void {
+    this.dragging = true;
+    this.originWorldX = originX;
+    this.originWorldZ = originZ;
+  }
+
+  private endDrag(): boolean {
+    this.dragging = false;
+    const committed = this.setTarget(this.targetWorldX, this.targetWorldZ, true);
+    if (!committed && this.activePieceId) {
+      this.buildingSystem.realignPiece(this.activePieceId);
+      this.syncTargetFromPiece();
+      this.refreshVisuals();
+    }
+    return committed;
   }
 
   private syncFromStore(): void {
@@ -139,17 +191,28 @@ export class MoveGizmoSystem {
     }
 
     if (!this.dragging) {
-      const world = this.buildingSystem.getPieceWorldPosition(piece);
-      this.targetWorldX = world.x;
-      this.targetWorldZ = world.z;
+      this.syncTargetFromPiece();
       this.buildingSystem.realignPiece(selectedPieceId);
     }
 
     this.refreshVisuals();
   }
 
+  private syncTargetFromPiece(): void {
+    if (!this.activePieceId) {
+      return;
+    }
+    const piece = this.buildingSystem.getPieceById(this.activePieceId);
+    if (!piece) {
+      return;
+    }
+    const world = this.buildingSystem.getPieceWorldPosition(piece);
+    this.targetWorldX = world.x;
+    this.targetWorldZ = world.z;
+  }
+
   private deactivate(): void {
-    if (this.activePieceId) {
+    if (this.activePieceId && !this.dragging) {
       this.buildingSystem.realignPiece(this.activePieceId);
     }
     this.activePieceId = null;
@@ -163,34 +226,25 @@ export class MoveGizmoSystem {
       return false;
     }
 
-    const piece = this.buildingSystem.getPieceById(this.activePieceId);
-    if (!piece) {
-      return false;
-    }
-
     const roundedX = roundPosition(worldX);
     const roundedZ = roundPosition(worldZ);
-    const anchor = this.gridSystem.worldToPieceAnchor(roundedX, roundedZ);
-    const onRoad = this.gridSystem.isBlockedForBuilding(
-      anchor.gridX,
-      anchor.gridZ,
-      piece.gridY,
+    const canMove = this.buildingSystem.canMovePieceToWorld(
+      this.activePieceId,
+      roundedX,
+      roundedZ,
     );
-    const inBounds = this.gridSystem.isWorldInBounds(roundedX, roundedZ);
-    const valid = inBounds && !onRoad;
 
-    if (!valid && commit) {
+    if (!canMove && commit) {
       this.targetWorldX = this.originWorldX;
       this.targetWorldZ = this.originWorldZ;
       this.buildingSystem.realignPiece(this.activePieceId);
-      if (onRoad) {
-        GameplayToast.show('No puedes mover piezas a la carretera');
-      }
+      GameplayToast.show('No se puede mover ahí');
       this.refreshVisuals();
       return false;
     }
 
-    if (!valid) {
+    if (!canMove) {
+      this.previewAt(roundedX, roundedZ);
       this.refreshVisualsAt(roundedX, roundedZ, false);
       return false;
     }
@@ -199,11 +253,7 @@ export class MoveGizmoSystem {
     this.targetWorldZ = roundedZ;
 
     if (!commit) {
-      this.buildingSystem.previewPieceWorldPosition(
-        this.activePieceId,
-        roundedX,
-        roundedZ,
-      );
+      this.previewAt(roundedX, roundedZ);
       this.refreshVisuals();
       return true;
     }
@@ -221,52 +271,30 @@ export class MoveGizmoSystem {
       this.buildingSystem.updateHighlights(next.hoveredPieceId, next.selectedPieceId);
     } else {
       this.buildingSystem.realignPiece(this.activePieceId);
+      GameplayToast.show('No se puede mover ahí');
     }
 
     this.refreshVisuals();
     return moved;
   }
 
-  private commitMove(): void {
-    const piece = this.activePieceId
-      ? this.buildingSystem.getPieceById(this.activePieceId)
-      : null;
-    const roundedX = roundPosition(this.targetWorldX);
-    const roundedZ = roundPosition(this.targetWorldZ);
-    const anchor = this.gridSystem.worldToPieceAnchor(roundedX, roundedZ);
-    const onRoad = piece
-      ? this.gridSystem.isBlockedForBuilding(anchor.gridX, anchor.gridZ, piece.gridY)
-      : this.gridSystem.isBlockedForBuilding(anchor.gridX, anchor.gridZ, 0);
-    const valid = this.gridSystem.isWorldInBounds(roundedX, roundedZ) && !onRoad;
-
-    if (!valid) {
-      this.targetWorldX = this.originWorldX;
-      this.targetWorldZ = this.originWorldZ;
-      if (this.activePieceId) {
-        this.buildingSystem.realignPiece(this.activePieceId);
-      }
-      if (onRoad) {
-        GameplayToast.show('No puedes mover piezas a la carretera');
-      }
-      this.refreshVisuals();
+  private previewAt(worldX: number, worldZ: number): void {
+    if (!this.activePieceId) {
       return;
     }
-
-    this.setTarget(this.targetWorldX, this.targetWorldZ, true);
+    this.buildingSystem.previewPieceWorldPosition(this.activePieceId, worldX, worldZ);
   }
 
-  private updateTargetFromPointer(): void {
-    const pick = this.scene.pick(
-      this.scene.pointerX,
-      this.scene.pointerY,
-      (mesh) => mesh.name === 'terrain' || mesh.name === 'cellHighlight',
-    );
-
-    if (!pick.hit || !pick.pickedPoint) {
+  private updateDragFromPointer(): void {
+    const ground = pickGroundPlane(this.scene, this.scene.pointerX, this.scene.pointerY);
+    if (!ground) {
       return;
     }
-
-    this.setTarget(pick.pickedPoint.x, pick.pickedPoint.z, false);
+    this.setTarget(
+      ground.x + this.dragOffsetX,
+      ground.z + this.dragOffsetZ,
+      false,
+    );
   }
 
   private refreshVisualsAt(worldX: number, worldZ: number, valid: boolean): void {
@@ -304,8 +332,13 @@ export class MoveGizmoSystem {
 
     const current = this.buildingSystem.getPieceWorldPosition(piece);
     const moved =
-      this.targetWorldX !== current.x || this.targetWorldZ !== current.z;
-    const valid = this.gridSystem.isWorldInBounds(this.targetWorldX, this.targetWorldZ);
+      Math.abs(this.targetWorldX - current.x) > 0.0005
+      || Math.abs(this.targetWorldZ - current.z) > 0.0005;
+    const valid = this.buildingSystem.canMovePieceToWorld(
+      this.activePieceId,
+      this.targetWorldX,
+      this.targetWorldZ,
+    );
 
     const y = piece.mesh.position.y + 0.55;
     this.gizmoMesh.position.set(this.targetWorldX, y, this.targetWorldZ);
